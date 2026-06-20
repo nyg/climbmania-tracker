@@ -26,7 +26,10 @@ function searchEvents(events, name) {
     }
   }
 
-  return results.sort((a, b) => a.eventId - b.eventId);
+  return results.sort((a, b) => {
+    const dateDiff = new Date(b.eventDate) - new Date(a.eventDate);
+    return dateDiff !== 0 ? dateDiff : b.eventId - a.eventId;
+  });
 }
 
 export default function App() {
