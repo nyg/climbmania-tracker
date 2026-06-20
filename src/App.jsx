@@ -311,14 +311,21 @@ export default function App() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
           <StatCard label="Events found" value={results.length} />
           <StatCard
-            label="Best tops"
+            label="Best tops + zones"
             value={bestTopsResult ? `${bestTopsResult.tops.length + bestTopsResult.zones.length} / ${bestTopsResult.totalBlocks}` : '—'}
             subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
             label="Best rank"
-            value={bestRankResult ? `#${bestRankResult.rank}` : '—'}
-            subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()} (of ${bestRankResult.totalAthletes})` : undefined}
+            value={bestRankResult ? (
+              <>
+                #{bestRankResult.rank}
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 5 }}>
+                  of {bestRankResult.totalAthletes}
+                </span>
+              </>
+            ) : '—'}
+            subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
             label="Best score"
