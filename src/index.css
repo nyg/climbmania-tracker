@@ -1,5 +1,127 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700;800&display=swap');
 
+/* ── Colour tokens (dark default) ─────────────────────────────────────── */
+:root {
+  --bg-page:              #0b0b14;
+  --bg-card:              #0f0f1c;
+  --bg-card-2:            #13131f;
+  --bg-progress:          #12121e;
+  --bg-block-empty:       #1e2035;
+  --bg-dropdown:          #13131f;
+  --bg-suggestion-hover:  #1e2035;
+
+  --border:               #1e293b;
+  --border-dark:          #2d3748;
+
+  --text-primary:         #f8fafc;
+  --text-secondary:       #f1f5f9;
+  --text-muted:           #94a3b8;
+  --text-faint:           #64748b;
+  --text-ultra-faint:     #475569;
+  --text-placeholder:     #334155;
+  --text-block-empty:     #3a3a5c;
+
+  --diff-pos-bg:          #052e16;
+  --diff-neg-bg:          #2d0a0a;
+  --diff-neutral-bg:      #1a1a2e;
+
+  --error-bg:             #1c0a0a;
+  --error-border:         #7f1d1d;
+  --error-text:           #fca5a5;
+}
+
+/* Light theme via OS preference (works before JS loads) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-page:              #f8fafc;
+    --bg-card:              #ffffff;
+    --bg-card-2:            #f1f5f9;
+    --bg-progress:          #e2e8f0;
+    --bg-block-empty:       #e2e8f0;
+    --bg-dropdown:          #ffffff;
+    --bg-suggestion-hover:  #f1f5f9;
+
+    --border:               #cbd5e1;
+    --border-dark:          #94a3b8;
+
+    --text-primary:         #0f172a;
+    --text-secondary:       #1e293b;
+    --text-muted:           #475569;
+    --text-faint:           #64748b;
+    --text-ultra-faint:     #64748b;
+    --text-placeholder:     #94a3b8;
+    --text-block-empty:     #94a3b8;
+
+    --diff-pos-bg:          #dcfce7;
+    --diff-neg-bg:          #fee2e2;
+    --diff-neutral-bg:      #f1f5f9;
+
+    --error-bg:             #fef2f2;
+    --error-border:         #fca5a5;
+    --error-text:           #dc2626;
+  }
+}
+
+/* Explicit overrides via data-theme (user preference wins over media query) */
+[data-theme="dark"] {
+  --bg-page:              #0b0b14;
+  --bg-card:              #0f0f1c;
+  --bg-card-2:            #13131f;
+  --bg-progress:          #12121e;
+  --bg-block-empty:       #1e2035;
+  --bg-dropdown:          #13131f;
+  --bg-suggestion-hover:  #1e2035;
+
+  --border:               #1e293b;
+  --border-dark:          #2d3748;
+
+  --text-primary:         #f8fafc;
+  --text-secondary:       #f1f5f9;
+  --text-muted:           #94a3b8;
+  --text-faint:           #64748b;
+  --text-ultra-faint:     #475569;
+  --text-placeholder:     #334155;
+  --text-block-empty:     #3a3a5c;
+
+  --diff-pos-bg:          #052e16;
+  --diff-neg-bg:          #2d0a0a;
+  --diff-neutral-bg:      #1a1a2e;
+
+  --error-bg:             #1c0a0a;
+  --error-border:         #7f1d1d;
+  --error-text:           #fca5a5;
+}
+
+[data-theme="light"] {
+  --bg-page:              #f8fafc;
+  --bg-card:              #ffffff;
+  --bg-card-2:            #f1f5f9;
+  --bg-progress:          #e2e8f0;
+  --bg-block-empty:       #e2e8f0;
+  --bg-dropdown:          #ffffff;
+  --bg-suggestion-hover:  #f1f5f9;
+
+  --border:               #cbd5e1;
+  --border-dark:          #94a3b8;
+
+  --text-primary:         #0f172a;
+  --text-secondary:       #1e293b;
+  --text-muted:           #475569;
+  --text-faint:           #64748b;
+  --text-ultra-faint:     #64748b;
+  --text-placeholder:     #94a3b8;
+  --text-block-empty:     #94a3b8;
+
+  --diff-pos-bg:          #dcfce7;
+  --diff-neg-bg:          #fee2e2;
+  --diff-neutral-bg:      #f1f5f9;
+
+  --error-bg:             #fef2f2;
+  --error-border:         #fca5a5;
+  --error-text:           #dc2626;
+}
+
+/* ── Base styles ───────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -11,12 +133,13 @@ html, body, #root {
 }
 
 body {
-  background: #0b0b14;
-  color: #e2e8f0;
+  background: var(--bg-page);
+  color: var(--text-secondary);
   font-family: 'IBM Plex Mono', 'Fira Code', 'Courier New', monospace;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
 }
 
 .name-input::placeholder {
-  color: #334155;
+  color: var(--text-placeholder);
 }

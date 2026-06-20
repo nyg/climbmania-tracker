@@ -7,9 +7,9 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
         const n = i + 1;
         const isTop  = tops.includes(n);
         const isZone = zones.includes(n);
-        const bg     = isTop ? '#16a34a' : isZone ? '#d97706' : '#1e2035';
+        const bg     = isTop ? '#16a34a' : isZone ? '#d97706' : 'var(--bg-block-empty)';
         const label  = isTop ? 'T' : isZone ? 'Z' : '';
-        const color  = isTop || isZone ? '#fff' : '#3a3a5c';
+        const color  = isTop || isZone ? '#fff' : 'var(--text-block-empty)';
         return (
           <div
             key={n}
@@ -19,7 +19,7 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
               background: bg, color, fontWeight: 800, fontSize: 10,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'monospace', cursor: 'default',
-              border: '1px solid rgba(255,255,255,0.04)',
+              border: '1px solid rgba(128,128,128,0.12)',
               transition: 'transform 0.1s',
             }}
           >
@@ -34,7 +34,7 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
 export function ProgressBar({ value, max, color = '#22c55e' }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div style={{ background: '#12121e', borderRadius: 6, height: 8, overflow: 'hidden', flex: 1 }}>
+    <div style={{ background: 'var(--bg-progress)', borderRadius: 6, height: 8, overflow: 'hidden', flex: 1 }}>
       <div style={{
         width: `${pct}%`, height: '100%', background: color,
         borderRadius: 6, transition: 'width 0.6s ease',
@@ -46,10 +46,10 @@ export function ProgressBar({ value, max, color = '#22c55e' }) {
 export function StatCard({ label, value }) {
   return (
     <div style={{
-      padding: '12px 14px', background: '#13131f',
-      borderRadius: 10, border: '1px solid #1e293b',
+      padding: '12px 14px', background: 'var(--bg-card-2)',
+      borderRadius: 10, border: '1px solid var(--border)',
     }}>
-      <div style={{ fontSize: 10, color: '#475569', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
+      <div style={{ fontSize: 10, color: 'var(--text-ultra-faint)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
         {label}
       </div>
       <div style={{ fontSize: 20, fontWeight: 800, color: '#6366f1' }}>{value}</div>

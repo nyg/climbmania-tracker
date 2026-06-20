@@ -2,6 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ProgressBar, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
+function getInitialTheme() {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'dark' || stored === 'light') return stored;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 function searchEvents(events, query, exact = false) {
   const q = query.trim().toLowerCase();
   const results = [];
@@ -36,6 +42,7 @@ function searchEvents(events, query, exact = false) {
 }
 
 export default function App() {
+  const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [loadErr, setLoadErr]         = useState(null);
   const [name, setName]               = useState('');
@@ -43,6 +50,13 @@ export default function App() {
   const [exactSearch, setExactSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}events.json`)
@@ -101,10 +115,24 @@ export default function App() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 10, letterSpacing: 4, color: '#6366f1', textTransform: 'uppercase', marginBottom: 6 }}>
-          Climbmania · Block Progress Tracker
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 10, letterSpacing: 4, color: '#6366f1', textTransform: 'uppercase', marginBottom: 6 }}>
+            Climbmania · Block Progress Tracker
+          </div>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '4px 10px',
+              cursor: 'pointer', fontSize: 15, lineHeight: 1,
+              color: 'var(--text-muted)',
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Input + dropdown wrapper */}
             <div style={{ position: 'relative', flex: 1 }}>
@@ -119,7 +147,7 @@ export default function App() {
                 placeholder="Enter athlete name…"
                 disabled={!data && !loadErr}
                 style={{
-                  fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
+                  fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
                   background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
                   outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
                 }}
@@ -127,9 +155,9 @@ export default function App() {
               {showDropdown && suggestions.length > 0 && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 200,
-                  background: '#13131f', border: '1px solid #2d3748', borderRadius: 8,
+                  background: 'var(--bg-dropdown)', border: '1px solid var(--border-dark)', borderRadius: 8,
                   maxHeight: 220, overflowY: 'auto',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
                 }}>
                   {suggestions.map(s => (
                     <div
@@ -139,10 +167,10 @@ export default function App() {
                       onMouseLeave={() => setHoveredSuggestion(null)}
                       style={{
                         padding: '9px 14px',
-                        fontSize: 15, fontWeight: 500, color: '#f1f5f9',
+                        fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)',
                         cursor: 'pointer', letterSpacing: 0,
-                        background: hoveredSuggestion === s ? '#1e2035' : 'transparent',
-                        borderBottom: '1px solid #1e293b',
+                        background: hoveredSuggestion === s ? 'var(--bg-suggestion-hover)' : 'transparent',
+                        borderBottom: '1px solid var(--border)',
                       }}
                     >
                       {s}
@@ -167,7 +195,7 @@ export default function App() {
           </div>
         </h1>
         {data && (
-          <div style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>
+          <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-ultra-faint)' }}>
             {data.events?.length ?? 0} events loaded · last scraped {new Date(data.scrapedAt).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric' })}
           </div>
         )}
@@ -178,7 +206,7 @@ export default function App() {
         {[
           ['#16a34a', 'T', 'Top — block fully completed'],
           ['#d97706', 'Z', 'Zone only — half block'],
-          ['#1e2035', '',  'Not completed'],
+          ['var(--bg-block-empty)', '',  'Not completed'],
         ].map(([c, l, txt]) => (
           <div key={txt} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
@@ -186,7 +214,7 @@ export default function App() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 9, color: '#fff', fontWeight: 800,
             }}>{l}</div>
-            <span style={{ color: '#64748b' }}>{txt}</span>
+            <span style={{ color: 'var(--text-faint)' }}>{txt}</span>
           </div>
         ))}
       </div>
@@ -194,9 +222,9 @@ export default function App() {
       {/* Loading */}
       {!data && !loadErr && (
         <div style={{
-          padding: '14px 18px', background: '#13131f',
-          borderRadius: 10, border: '1px solid #1e293b',
-          marginBottom: 24, fontSize: 12, color: '#94a3b8',
+          padding: '14px 18px', background: 'var(--bg-card-2)',
+          borderRadius: 10, border: '1px solid var(--border)',
+          marginBottom: 24, fontSize: 12, color: 'var(--text-muted)',
         }}>
           Loading event data…
           <ProgressBar value={0} max={1} color="#6366f1" />
@@ -206,9 +234,9 @@ export default function App() {
       {/* Load error */}
       {loadErr && (
         <div style={{
-          padding: '12px 16px', background: '#1c0a0a',
-          border: '1px solid #7f1d1d', borderRadius: 8,
-          color: '#fca5a5', fontSize: 12, marginBottom: 20,
+          padding: '12px 16px', background: 'var(--error-bg)',
+          border: '1px solid var(--error-border)', borderRadius: 8,
+          color: 'var(--error-text)', fontSize: 12, marginBottom: 20,
         }}>
           ⚠ Failed to load event data: {loadErr}
         </div>
@@ -217,9 +245,9 @@ export default function App() {
       {/* No results hint */}
       {data && searchQuery && results.length === 0 && (
         <div style={{
-          padding: '12px 16px', background: '#1c0a0a',
-          border: '1px solid #7f1d1d', borderRadius: 8,
-          color: '#fca5a5', fontSize: 12, marginBottom: 20,
+          padding: '12px 16px', background: 'var(--error-bg)',
+          border: '1px solid var(--error-border)', borderRadius: 8,
+          color: 'var(--error-text)', fontSize: 12, marginBottom: 20,
         }}>
           ⚠ "{searchQuery}" was not found in any event.
         </div>
