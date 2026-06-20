@@ -29,6 +29,7 @@ function searchEvents(events, query, exact = false) {
             tops: athlete.tops,
             zones: athlete.zones,
             totalBlocks: athlete.totalBlocks,
+            totalAthletes: category.athletes.length,
           });
         }
       }
@@ -50,6 +51,7 @@ export default function App() {
   const [exactSearch, setExactSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -84,6 +86,8 @@ export default function App() {
     return allAthleteNames.filter(n => n.toLowerCase().includes(q));
   }, [name, allAthleteNames]);
 
+  useEffect(() => { setFocusedIndex(-1); }, [suggestions]);
+
   const handleSearch = () => {
     setSearchQuery(name.trim());
     setExactSearch(false);
@@ -96,6 +100,7 @@ export default function App() {
     setExactSearch(true);
     setShowDropdown(false);
     setHoveredSuggestion(null);
+    setFocusedIndex(-1);
   };
 
   const results = useMemo(() => {
@@ -103,15 +108,26 @@ export default function App() {
     return searchEvents(data.events ?? [], searchQuery, exactSearch);
   }, [data, searchQuery, exactSearch]);
 
-  const bestTops   = results.length ? Math.max(...results.map(r => r.tops.length)) : 0;
-  const bestRank   = results.length ? Math.min(...results.map(r => parseInt(r.rank) || 999)) : '—';
-  const bestPoints = results.length ? Math.max(...results.map(r => r.points)) : 0;
-  const totalBlocks = results[0]?.totalBlocks || 30;
+  const bestTopsResult = results.length ? results.reduce((best, r) => {
+    const rate  = (r.tops.length + r.zones.length) / r.totalBlocks;
+    const bRate = (best.tops.length + best.zones.length) / best.totalBlocks;
+    if (rate > bRate) return r;
+    if (rate === bRate && (r.tops.length + r.zones.length) > (best.tops.length + best.zones.length)) return r;
+    return best;
+  }) : null;
+
+  const bestRankResult = results.length ? results.reduce((best, r) => {
+    const pct  = (parseInt(r.rank) || 999) / (r.totalAthletes || 1);
+    const bPct = (parseInt(best.rank) || 999) / (best.totalAthletes || 1);
+    return pct < bPct ? r : best;
+  }) : null;
+
+  const bestPointsResult = results.length ? results.reduce((best, r) => r.points > best.points ? r : best) : null;
 
   return (
     <div style={{
       minHeight: '100vh', padding: '28px 20px',
-      maxWidth: 860, margin: '0 auto',
+      maxWidth: 1260, margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -162,7 +178,25 @@ export default function App() {
                 onChange={e => { setName(e.target.value); setShowDropdown(true); }}
                 onFocus={() => name.trim() && setShowDropdown(true)}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                onKeyDown={e => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setShowDropdown(true);
+                    setFocusedIndex(i => Math.min(i + 1, suggestions.length - 1));
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setFocusedIndex(i => Math.max(i - 1, -1));
+                  } else if (e.key === 'Enter') {
+                    if (focusedIndex >= 0 && suggestions[focusedIndex]) {
+                      handleSelect(suggestions[focusedIndex]);
+                    } else {
+                      handleSearch();
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowDropdown(false);
+                    setFocusedIndex(-1);
+                  }
+                }}
                 placeholder="Enter athlete name…"
                 disabled={!data && !loadErr}
                 style={{
@@ -178,7 +212,7 @@ export default function App() {
                   maxHeight: 220, overflowY: 'auto',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
                 }}>
-                  {suggestions.map(s => (
+                  {suggestions.map((s, idx) => (
                     <div
                       key={s}
                       onMouseDown={() => handleSelect(s)}
@@ -188,7 +222,7 @@ export default function App() {
                         padding: '9px 14px',
                         fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)',
                         cursor: 'pointer', letterSpacing: 0,
-                        background: hoveredSuggestion === s ? 'var(--bg-suggestion-hover)' : 'transparent',
+                        background: (hoveredSuggestion === s || focusedIndex === idx) ? 'var(--bg-suggestion-hover)' : 'transparent',
                         borderBottom: '1px solid var(--border)',
                       }}
                     >
@@ -276,9 +310,28 @@ export default function App() {
       {results.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
           <StatCard label="Events found" value={results.length} />
-          <StatCard label="Best tops"    value={`${bestTops} / ${totalBlocks}`} />
-          <StatCard label="Best rank"    value={`#${bestRank}`} />
-          <StatCard label="Best score"   value={`${bestPoints} pts`} />
+          <StatCard
+            label="Best tops + zones"
+            value={bestTopsResult ? `${bestTopsResult.tops.length + bestTopsResult.zones.length} / ${bestTopsResult.totalBlocks}` : '—'}
+            subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
+          />
+          <StatCard
+            label="Best rank"
+            value={bestRankResult ? (
+              <>
+                #{bestRankResult.rank}
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 5 }}>
+                  of {bestRankResult.totalAthletes}
+                </span>
+              </>
+            ) : '—'}
+            subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
+          />
+          <StatCard
+            label="Best score"
+            value={bestPointsResult ? `${bestPointsResult.points} pts` : '—'}
+            subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
+          />
         </div>
       )}
 
@@ -295,4 +348,3 @@ export default function App() {
     </div>
   );
 }
-
