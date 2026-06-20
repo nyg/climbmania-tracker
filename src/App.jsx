@@ -30,9 +30,10 @@ function searchEvents(events, name) {
 }
 
 export default function App() {
-  const [data, setData]     = useState(null);
-  const [loadErr, setLoadErr] = useState(null);
-  const [name, setName]     = useState('');
+  const [data, setData]         = useState(null);
+  const [loadErr, setLoadErr]   = useState(null);
+  const [name, setName]         = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}events.json`)
@@ -41,10 +42,12 @@ export default function App() {
       .catch(e => setLoadErr(e.message));
   }, []);
 
+  const handleSearch = () => setSearchQuery(name.trim());
+
   const results = useMemo(() => {
-    if (!data || !name.trim()) return [];
-    return searchEvents(data.events ?? [], name);
-  }, [data, name]);
+    if (!data || !searchQuery) return [];
+    return searchEvents(data.events ?? [], searchQuery);
+  }, [data, searchQuery]);
 
   const bestTops   = results.length ? Math.max(...results.map(r => r.tops.length)) : 0;
   const bestRank   = results.length ? Math.min(...results.map(r => parseInt(r.rank) || 999)) : '—';
@@ -62,19 +65,35 @@ export default function App() {
           Climbmania · Block Progress Tracker
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5 }}>
-          <input
-            className="name-input"
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Enter athlete name…"
-            disabled={!data && !loadErr}
-            style={{
-              fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
-              background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
-              outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
-            }}
-          />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <input
+              className="name-input"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder="Enter athlete name…"
+              disabled={!data && !loadErr}
+              style={{
+                fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
+                background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
+                outline: 'none', padding: '2px 0', fontFamily: 'inherit', flex: 1,
+              }}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={!data && !loadErr}
+              style={{
+                fontSize: 13, fontWeight: 700, color: '#f8fafc',
+                background: '#6366f1', border: 'none', borderRadius: 8,
+                padding: '6px 18px', cursor: 'pointer', fontFamily: 'inherit',
+                opacity: (!data && !loadErr) ? 0.4 : 1,
+                flexShrink: 0,
+              }}
+            >
+              Search
+            </button>
+          </div>
         </h1>
         {data && (
           <div style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>
@@ -125,13 +144,13 @@ export default function App() {
       )}
 
       {/* No results hint */}
-      {data && name.trim() && results.length === 0 && (
+      {data && searchQuery && results.length === 0 && (
         <div style={{
           padding: '12px 16px', background: '#1c0a0a',
           border: '1px solid #7f1d1d', borderRadius: 8,
           color: '#fca5a5', fontSize: 12, marginBottom: 20,
         }}>
-          ⚠ "{name}" was not found in any event.
+          ⚠ "{searchQuery}" was not found in any event.
         </div>
       )}
 
