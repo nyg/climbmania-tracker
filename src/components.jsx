@@ -43,7 +43,7 @@ export function ProgressBar({ value, max, color = '#22c55e' }) {
   );
 }
 
-export function StatCard({ label, value }) {
+export function StatCard({ label, value, subtitle }) {
   return (
     <div style={{
       padding: '12px 14px', background: 'var(--bg-card-2)',
@@ -53,6 +53,11 @@ export function StatCard({ label, value }) {
         {label}
       </div>
       <div style={{ fontSize: 20, fontWeight: 800, color: '#6366f1' }}>{value}</div>
+      {subtitle && (
+        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.3 }}>
+          {subtitle}
+        </div>
+      )}
     </div>
   );
 }
