@@ -4,4 +4,3 @@ dist-ssr/
 *.local
 .env
 .DS_Store
-events.json
