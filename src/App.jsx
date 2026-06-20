@@ -122,7 +122,7 @@ export default function App() {
     return pct < bPct ? r : best;
   }) : null;
 
-  const bestPoints = results.length ? Math.max(...results.map(r => r.points)) : 0;
+  const bestPointsResult = results.length ? results.reduce((best, r) => r.points > best.points ? r : best) : null;
 
   return (
     <div style={{
@@ -313,14 +313,18 @@ export default function App() {
           <StatCard
             label="Best tops"
             value={bestTopsResult ? `${bestTopsResult.tops.length + bestTopsResult.zones.length} / ${bestTopsResult.totalBlocks}` : '—'}
-            subtitle={bestTopsResult?.eventTitle}
+            subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
             label="Best rank"
             value={bestRankResult ? `#${bestRankResult.rank}` : '—'}
-            subtitle={bestRankResult ? `${bestRankResult.eventTitle} (of ${bestRankResult.totalAthletes})` : undefined}
+            subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()} (of ${bestRankResult.totalAthletes})` : undefined}
           />
-          <StatCard label="Best score"   value={`${bestPoints} pts`} />
+          <StatCard
+            label="Best score"
+            value={bestPointsResult ? `${bestPointsResult.points} pts` : '—'}
+            subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
+          />
         </div>
       )}
 
