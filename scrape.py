@@ -242,7 +242,7 @@ def scrape(output: str, delay: float) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Climbmania event results.")
     parser.add_argument(
-        "--output", default="events.json", help="Output JSON file (default: events.json)"
+        "--output", default="public/events.json", help="Output JSON file (default: public/events.json)"
     )
     parser.add_argument(
         "--delay",
