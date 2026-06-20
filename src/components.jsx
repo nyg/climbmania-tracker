@@ -8,7 +8,7 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
         const isTop  = tops.includes(n);
         const isZone = zones.includes(n);
         const bg     = isTop ? '#16a34a' : isZone ? '#d97706' : 'var(--bg-block-empty)';
-        const label  = isTop ? 'T' : isZone ? 'Z' : '';
+        const label  = String(n);
         const color  = isTop || isZone ? '#fff' : 'var(--text-block-empty)';
         return (
           <div
@@ -16,7 +16,7 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
             title={`Block ${n}: ${isTop ? 'TOP ✓' : isZone ? 'ZONE only' : '—'}`}
             style={{
               width: 26, height: 26, borderRadius: 4,
-              background: bg, color, fontWeight: 800, fontSize: 10,
+              background: bg, color, fontWeight: 800, fontSize: 9,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'monospace', cursor: 'default',
               border: '1px solid rgba(128,128,128,0.12)',
