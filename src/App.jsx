@@ -127,7 +127,7 @@ export default function App() {
   return (
     <div style={{
       minHeight: '100vh', padding: '28px 20px',
-      maxWidth: 1100, margin: '0 auto',
+      maxWidth: 1260, margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -348,4 +348,3 @@ export default function App() {
     </div>
   );
 }
-
