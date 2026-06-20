@@ -22,14 +22,23 @@ HEADERS = {
 }
 
 
+RETRY_COUNT = 3
+RETRY_DELAY = 2.0  # seconds between retries
+
+
 def fetch(url: str, session: requests.Session) -> BeautifulSoup | None:
-    try:
-        resp = session.get(url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-        return BeautifulSoup(resp.text, "html.parser")
-    except requests.RequestException as exc:
-        print(f"  ✗ {exc}", file=sys.stderr)
-        return None
+    for attempt in range(1, RETRY_COUNT + 2):  # 1 initial + RETRY_COUNT retries
+        try:
+            resp = session.get(url, headers=HEADERS, timeout=15)
+            resp.raise_for_status()
+            return BeautifulSoup(resp.text, "html.parser")
+        except requests.RequestException as exc:
+            if attempt <= RETRY_COUNT:
+                print(f"  ⟳ attempt {attempt} failed ({exc}), retrying in {RETRY_DELAY}s…", file=sys.stderr)
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"  ✗ giving up after {RETRY_COUNT} retries: {exc}", file=sys.stderr)
+    return None
 
 
 def discover_events(soup: BeautifulSoup) -> list[dict]:
