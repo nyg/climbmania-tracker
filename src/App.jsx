@@ -2,14 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ProgressBar, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
-function searchEvents(events, name) {
-  const query = name.trim().toLowerCase();
+function searchEvents(events, query, exact = false) {
+  const q = query.trim().toLowerCase();
   const results = [];
 
   for (const event of events) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
-        if (athlete.name.toLowerCase().includes(query)) {
+        const match = exact
+          ? athlete.name.toLowerCase() === q
+          : athlete.name.toLowerCase().includes(q);
+        if (match) {
           results.push({
             eventId: event.id,
             eventTitle: event.title,
@@ -33,10 +36,13 @@ function searchEvents(events, name) {
 }
 
 export default function App() {
-  const [data, setData]         = useState(null);
-  const [loadErr, setLoadErr]   = useState(null);
-  const [name, setName]         = useState('');
+  const [data, setData]               = useState(null);
+  const [loadErr, setLoadErr]         = useState(null);
+  const [name, setName]               = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [exactSearch, setExactSearch] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}events.json`)
@@ -45,12 +51,43 @@ export default function App() {
       .catch(e => setLoadErr(e.message));
   }, []);
 
-  const handleSearch = () => setSearchQuery(name.trim());
+  const allAthleteNames = useMemo(() => {
+    if (!data) return [];
+    const names = new Set();
+    for (const event of data.events ?? []) {
+      for (const category of event.categories ?? []) {
+        for (const athlete of category.athletes ?? []) {
+          names.add(athlete.name);
+        }
+      }
+    }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [data]);
+
+  const suggestions = useMemo(() => {
+    const q = name.trim().toLowerCase();
+    if (!q) return [];
+    return allAthleteNames.filter(n => n.toLowerCase().includes(q));
+  }, [name, allAthleteNames]);
+
+  const handleSearch = () => {
+    setSearchQuery(name.trim());
+    setExactSearch(false);
+    setShowDropdown(false);
+  };
+
+  const handleSelect = (athleteName) => {
+    setName(athleteName);
+    setSearchQuery(athleteName);
+    setExactSearch(true);
+    setShowDropdown(false);
+    setHoveredSuggestion(null);
+  };
 
   const results = useMemo(() => {
     if (!data || !searchQuery) return [];
-    return searchEvents(data.events ?? [], searchQuery);
-  }, [data, searchQuery]);
+    return searchEvents(data.events ?? [], searchQuery, exactSearch);
+  }, [data, searchQuery, exactSearch]);
 
   const bestTops   = results.length ? Math.max(...results.map(r => r.tops.length)) : 0;
   const bestRank   = results.length ? Math.min(...results.map(r => parseInt(r.rank) || 999)) : '—';
@@ -69,20 +106,51 @@ export default function App() {
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              className="name-input"
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Enter athlete name…"
-              disabled={!data && !loadErr}
-              style={{
-                fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
-                background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
-                outline: 'none', padding: '2px 0', fontFamily: 'inherit', flex: 1,
-              }}
-            />
+            {/* Input + dropdown wrapper */}
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                className="name-input"
+                type="text"
+                value={name}
+                onChange={e => { setName(e.target.value); setShowDropdown(true); }}
+                onFocus={() => name.trim() && setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="Enter athlete name…"
+                disabled={!data && !loadErr}
+                style={{
+                  fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
+                  background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
+                  outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
+                }}
+              />
+              {showDropdown && suggestions.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 200,
+                  background: '#13131f', border: '1px solid #2d3748', borderRadius: 8,
+                  maxHeight: 220, overflowY: 'auto',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                }}>
+                  {suggestions.map(s => (
+                    <div
+                      key={s}
+                      onMouseDown={() => handleSelect(s)}
+                      onMouseEnter={() => setHoveredSuggestion(s)}
+                      onMouseLeave={() => setHoveredSuggestion(null)}
+                      style={{
+                        padding: '9px 14px',
+                        fontSize: 15, fontWeight: 500, color: '#f1f5f9',
+                        cursor: 'pointer', letterSpacing: 0,
+                        background: hoveredSuggestion === s ? '#1e2035' : 'transparent',
+                        borderBottom: '1px solid #1e293b',
+                      }}
+                    >
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               onClick={handleSearch}
               disabled={!data && !loadErr}
