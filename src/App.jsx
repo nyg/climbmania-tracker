@@ -1,62 +1,55 @@
-import React, { useState, useCallback } from 'react';
-import { EVENT_IDS, fetchEventPage, parseAthleteFromHTML } from './fetcher.js';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ProgressBar, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
-const DELAY_MS = 200; // polite delay between requests (ms)
+function searchEvents(events, name) {
+  const query = name.trim().toLowerCase();
+  const results = [];
+
+  for (const event of events) {
+    for (const category of event.categories ?? []) {
+      for (const athlete of category.athletes ?? []) {
+        if (athlete.name.toLowerCase().includes(query)) {
+          results.push({
+            eventId: event.id,
+            eventTitle: event.title,
+            eventDate: event.date,
+            category: category.name,
+            rank: athlete.rank,
+            points: athlete.points,
+            tops: athlete.tops,
+            zones: athlete.zones,
+            totalBlocks: athlete.totalBlocks,
+          });
+        }
+      }
+    }
+  }
+
+  return results.sort((a, b) => a.eventId - b.eventId);
+}
 
 export default function App() {
-  const [results, setResults]   = useState([]);
-  const [loading, setLoading]   = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0, id: 0 });
-  const [done, setDone]         = useState(false);
-  const [error, setError]       = useState(null);
-  const [name, setName]         = useState('');
+  const [data, setData]     = useState(null);
+  const [loadErr, setLoadErr] = useState(null);
+  const [name, setName]     = useState('');
 
-  const runScan = useCallback(async () => {
-    setLoading(true);
-    setResults([]);
-    setDone(false);
-    setError(null);
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}events.json`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(setData)
+      .catch(e => setLoadErr(e.message));
+  }, []);
 
-    const found = [];
-    setProgress({ current: 0, total: EVENT_IDS.length, id: 0 });
+  const results = useMemo(() => {
+    if (!data || !name.trim()) return [];
+    return searchEvents(data.events ?? [], name);
+  }, [data, name]);
 
-    for (let i = 0; i < EVENT_IDS.length; i++) {
-      const id = EVENT_IDS[i];
-      setProgress({ current: i + 1, total: EVENT_IDS.length, id });
-
-      try {
-        const html = await fetchEventPage(id);
-        if (html) {
-          const result = parseAthleteFromHTML(html, id, name);
-          if (result) {
-            found.push(result);
-            setResults([...found]); // update live
-          }
-        }
-      } catch (e) {
-        console.warn(`Event #${id} failed:`, e.message);
-      }
-
-      if (i < EVENT_IDS.length - 1) {
-        await new Promise(r => setTimeout(r, DELAY_MS));
-      }
-    }
-
-    setLoading(false);
-    setDone(true);
-    if (found.length === 0) {
-      setError(`"${name}" was not found in any event from #152 to #183.`);
-    }
-  }, [name]);
-
-  const sorted = [...results].sort((a, b) => a.eventId - b.eventId);
-
-  const bestTops   = sorted.length ? Math.max(...sorted.map(r => r.tops.length)) : 0;
-  const bestRank   = sorted.length ? Math.min(...sorted.map(r => parseInt(r.rank) || 999)) : '—';
-  const bestPoints = sorted.length ? Math.max(...sorted.map(r => r.points)) : 0;
-  const totalBlocks = sorted[0]?.totalBlocks || 30;
+  const bestTops   = results.length ? Math.max(...results.map(r => r.tops.length)) : 0;
+  const bestRank   = results.length ? Math.min(...results.map(r => parseInt(r.rank) || 999)) : '—';
+  const bestPoints = results.length ? Math.max(...results.map(r => r.points)) : 0;
+  const totalBlocks = results[0]?.totalBlocks || 30;
 
   return (
     <div style={{
@@ -73,9 +66,9 @@ export default function App() {
             className="name-input"
             type="text"
             value={name}
-            onChange={e => { setName(e.target.value); setDone(false); setResults([]); setError(null); }}
+            onChange={e => setName(e.target.value)}
             placeholder="Enter athlete name…"
-            disabled={loading}
+            disabled={!data && !loadErr}
             style={{
               fontSize: 26, fontWeight: 900, color: '#f8fafc', letterSpacing: -0.5,
               background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
@@ -83,9 +76,11 @@ export default function App() {
             }}
           />
         </h1>
-        <div style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>
-          Scanning events #152 (Le Môll · 30 Nov 2024) → #183 (TOTEM Vevey · May 2026)
-        </div>
+        {data && (
+          <div style={{ marginTop: 4, fontSize: 12, color: '#475569' }}>
+            {data.events?.length ?? 0} events loaded · last scraped {new Date(data.scrapedAt).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
+        )}
       </div>
 
       {/* Legend */}
@@ -106,58 +101,44 @@ export default function App() {
         ))}
       </div>
 
-      {/* Scan button */}
-      {!loading && !done && (
-        <button
-          onClick={runScan}
-          disabled={!name.trim()}
-          style={{
-            background: name.trim() ? '#6366f1' : '#1e2035',
-            color: name.trim() ? '#fff' : '#475569',
-            border: 'none',
-            borderRadius: 8, padding: '11px 26px', fontSize: 13,
-            fontWeight: 700, cursor: name.trim() ? 'pointer' : 'default',
-            fontFamily: 'inherit', letterSpacing: 1, marginBottom: 28,
-          }}
-        >
-          ▶ SCAN ALL EVENTS
-        </button>
-      )}
-
-      {/* Progress */}
-      {loading && (
+      {/* Loading */}
+      {!data && !loadErr && (
         <div style={{
-          marginBottom: 24, padding: '14px 18px',
-          background: '#13131f', borderRadius: 10, border: '1px solid #1e293b',
+          padding: '14px 18px', background: '#13131f',
+          borderRadius: 10, border: '1px solid #1e293b',
+          marginBottom: 24, fontSize: 12, color: '#94a3b8',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-            <span style={{ color: '#94a3b8' }}>Fetching event #{progress.id}…</span>
-            <span style={{ color: '#6366f1', fontWeight: 700 }}>{progress.current} / {progress.total}</span>
-          </div>
-          <ProgressBar value={progress.current} max={progress.total} color="#6366f1" />
-          {results.length > 0 && (
-            <div style={{ marginTop: 8, fontSize: 11, color: '#22c55e' }}>
-              ✓ Found in {results.length} event{results.length !== 1 ? 's' : ''} so far
-            </div>
-          )}
+          Loading event data…
+          <ProgressBar value={0} max={1} color="#6366f1" />
         </div>
       )}
 
-      {/* Error */}
-      {error && (
+      {/* Load error */}
+      {loadErr && (
         <div style={{
           padding: '12px 16px', background: '#1c0a0a',
           border: '1px solid #7f1d1d', borderRadius: 8,
           color: '#fca5a5', fontSize: 12, marginBottom: 20,
         }}>
-          ⚠ {error}
+          ⚠ Failed to load event data: {loadErr}
+        </div>
+      )}
+
+      {/* No results hint */}
+      {data && name.trim() && results.length === 0 && (
+        <div style={{
+          padding: '12px 16px', background: '#1c0a0a',
+          border: '1px solid #7f1d1d', borderRadius: 8,
+          color: '#fca5a5', fontSize: 12, marginBottom: 20,
+        }}>
+          ⚠ "{name}" was not found in any event.
         </div>
       )}
 
       {/* Summary stats */}
-      {sorted.length > 0 && (
+      {results.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
-          <StatCard label="Events found" value={sorted.length} />
+          <StatCard label="Events found" value={results.length} />
           <StatCard label="Best tops"    value={`${bestTops} / ${totalBlocks}`} />
           <StatCard label="Best rank"    value={`#${bestRank}`} />
           <StatCard label="Best score"   value={`${bestPoints} pts`} />
@@ -166,38 +147,15 @@ export default function App() {
 
       {/* Event cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {sorted.map((r, idx) => (
+        {results.map((r, idx) => (
           <EventCard
-            key={r.eventId}
+            key={`${r.eventId}-${r.category}`}
             result={r}
-            prevTops={idx > 0 ? sorted[idx - 1].tops.length : null}
+            prevTops={idx > 0 ? results[idx - 1].tops.length : null}
           />
         ))}
       </div>
-
-      {/* Done banner */}
-      {done && sorted.length > 0 && (
-        <div style={{
-          marginTop: 24, padding: '14px 18px', background: '#052e16',
-          borderRadius: 10, border: '1px solid #14532d',
-          fontSize: 12, color: '#86efac',
-        }}>
-          ✅ Scan complete — {name} found in {sorted.length} event{sorted.length !== 1 ? 's' : ''}.
-        </div>
-      )}
-
-      {done && (
-        <button
-          onClick={runScan}
-          style={{
-            marginTop: 16, background: 'transparent', color: '#6366f1',
-            border: '1px solid #6366f1', borderRadius: 8,
-            padding: '9px 20px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          ↺ Scan again
-        </button>
-      )}
     </div>
   );
 }
+

@@ -2,7 +2,7 @@ import React from 'react';
 import { BlockGrid, ProgressBar } from './components.jsx';
 
 export default function EventCard({ result, prevTops }) {
-  const { eventId, eventTitle, eventDate, rank, points, tops = [], zones = [], totalBlocks } = result;
+  const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks } = result;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
   const diff       = prevTops !== null ? topsCount - prevTops : null;
@@ -28,7 +28,7 @@ export default function EventCard({ result, prevTops }) {
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11, color: '#475569' }}>OPEN Homme</div>
+          <div style={{ fontSize: 11, color: '#475569' }}>{category}</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#f1f5f9' }}>Rank #{rank}</div>
           <div style={{ fontSize: 12, color: '#94a3b8' }}>{points} pts</div>
         </div>
