@@ -347,6 +347,24 @@ export default function App() {
           />
         ))}
       </div>
+
+      {/* Footer */}
+      <footer style={{
+        marginTop: 48, paddingTop: 16,
+        borderTop: '1px solid var(--border)',
+        fontSize: 11, color: 'var(--text-ultra-faint)',
+        display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
+      }}>
+        <span>{t('footerDisclaimer')}</span>
+        <a
+          href="https://github.com/nyg/climbmania-tracker"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#6366f1', textDecoration: 'none' }}
+        >
+          github.com/nyg/climbmania-tracker
+        </a>
+      </footer>
     </div>
   );
 }
