@@ -2,30 +2,30 @@
 
 /* ── Colour tokens (dark default) ─────────────────────────────────────── */
 :root {
-  --bg-page:              #0b0b14;
-  --bg-card:              #0f0f1c;
-  --bg-card-2:            #13131f;
-  --bg-progress:          #12121e;
-  --bg-block-empty:       #1e2035;
-  --bg-dropdown:          #13131f;
-  --bg-suggestion-hover:  #1e2035;
+  --bg-page:              #0a0a12;
+  --bg-card:              #14142a;
+  --bg-card-2:            #1c1c38;
+  --bg-progress:          #1c1c38;
+  --bg-block-empty:       #28285a;
+  --bg-dropdown:          #1c1c38;
+  --bg-suggestion-hover:  #28285a;
 
-  --border:               #1e293b;
-  --border-dark:          #2d3748;
+  --border:               #2e3a62;
+  --border-dark:          #3e4e78;
 
   --text-primary:         #f8fafc;
   --text-secondary:       #f1f5f9;
   --text-muted:           #94a3b8;
-  --text-faint:           #64748b;
-  --text-ultra-faint:     #475569;
-  --text-placeholder:     #334155;
-  --text-block-empty:     #3a3a5c;
+  --text-faint:           #6d7fa0;
+  --text-ultra-faint:     #5a6882;
+  --text-placeholder:     #3d4f70;
+  --text-block-empty:     #6060a8;
 
-  --diff-pos-bg:          #052e16;
-  --diff-neg-bg:          #2d0a0a;
-  --diff-neutral-bg:      #1a1a2e;
+  --diff-pos-bg:          #0b3d20;
+  --diff-neg-bg:          #3d1010;
+  --diff-neutral-bg:      #22224e;
 
-  --error-bg:             #1c0a0a;
+  --error-bg:             #2a0a0a;
   --error-border:         #7f1d1d;
   --error-text:           #fca5a5;
 }
@@ -64,30 +64,30 @@
 
 /* Explicit overrides via data-theme (user preference wins over media query) */
 [data-theme="dark"] {
-  --bg-page:              #0b0b14;
-  --bg-card:              #0f0f1c;
-  --bg-card-2:            #13131f;
-  --bg-progress:          #12121e;
-  --bg-block-empty:       #1e2035;
-  --bg-dropdown:          #13131f;
-  --bg-suggestion-hover:  #1e2035;
+  --bg-page:              #0a0a12;
+  --bg-card:              #14142a;
+  --bg-card-2:            #1c1c38;
+  --bg-progress:          #1c1c38;
+  --bg-block-empty:       #28285a;
+  --bg-dropdown:          #1c1c38;
+  --bg-suggestion-hover:  #28285a;
 
-  --border:               #1e293b;
-  --border-dark:          #2d3748;
+  --border:               #2e3a62;
+  --border-dark:          #3e4e78;
 
   --text-primary:         #f8fafc;
   --text-secondary:       #f1f5f9;
   --text-muted:           #94a3b8;
-  --text-faint:           #64748b;
-  --text-ultra-faint:     #475569;
-  --text-placeholder:     #334155;
-  --text-block-empty:     #3a3a5c;
+  --text-faint:           #6d7fa0;
+  --text-ultra-faint:     #5a6882;
+  --text-placeholder:     #3d4f70;
+  --text-block-empty:     #6060a8;
 
-  --diff-pos-bg:          #052e16;
-  --diff-neg-bg:          #2d0a0a;
-  --diff-neutral-bg:      #1a1a2e;
+  --diff-pos-bg:          #0b3d20;
+  --diff-neg-bg:          #3d1010;
+  --diff-neutral-bg:      #22224e;
 
-  --error-bg:             #1c0a0a;
+  --error-bg:             #2a0a0a;
   --error-border:         #7f1d1d;
   --error-text:           #fca5a5;
 }
