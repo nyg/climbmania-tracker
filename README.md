@@ -20,10 +20,8 @@ pnpm install
 # 2. Start the dev server
 pnpm dev
 
-# 3. Open http://localhost:3000, type an athlete name and press Search
+# 3. Open http://localhost:3000, enter an athlete name and hit the Enter key
 ```
-
-That's it. No `.env` file needed.
 
 ## Build for production
 
