@@ -6,12 +6,67 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
 GROUP_URL = "https://climbmania.ch/fr/groups/1"
+
+# ---------------------------------------------------------------------------
+# Name normalisation / deduplication
+# ---------------------------------------------------------------------------
+
+_NAME_MERGES_PATH = Path(__file__).parent / "public" / "name-merges.json"
+
+
+def _build_merge_map(path: Path) -> dict[str, str]:
+    """Return alias → canonical mapping loaded from name-merges.json.
+
+    The merge file is a JSON array of groups; the first element of each group
+    is the canonical name.  Lookup is case- and diacritic-insensitive.
+    """
+    if not path.exists():
+        return {}
+
+    def _norm(name: str) -> str:
+        n = name.lower().strip()
+        n = unicodedata.normalize("NFD", n)
+        n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+        n = re.sub(r"[^a-z ]", " ", n)
+        return re.sub(r"\s+", " ", n).strip()
+
+    with open(path, encoding="utf-8") as f:
+        groups = json.load(f)
+
+    alias_map: dict[str, str] = {}
+    for group in groups:
+        canonical = group[0]
+        for alias in group[1:]:
+            alias_map[_norm(alias)] = canonical
+        # Also map the canonical's own normalised form so it round-trips cleanly
+        alias_map[_norm(canonical)] = canonical
+    return alias_map
+
+
+_MERGE_MAP: dict[str, str] = _build_merge_map(_NAME_MERGES_PATH)
+
+
+def _normalise_name(name: str) -> str:
+    """Return the canonical name for *name*, or *name* unchanged if unknown."""
+    if not _MERGE_MAP:
+        return name
+
+    def _norm(n: str) -> str:
+        n = n.lower().strip()
+        n = unicodedata.normalize("NFD", n)
+        n = "".join(c for c in n if unicodedata.category(c) != "Mn")
+        n = re.sub(r"[^a-z ]", " ", n)
+        return re.sub(r"\s+", " ", n).strip()
+
+    return _MERGE_MAP.get(_norm(name), name)
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -135,7 +190,7 @@ def parse_athlete_row(row) -> dict | None:
     raw_name = name_cell.get_text(separator="\n", strip=True)
     # Cell sometimes contains the name twice; take only the first occurrence
     parts = [p.strip() for p in raw_name.split("\n") if p.strip()]
-    name = parts[0] if parts else raw_name.strip()
+    name = _normalise_name(parts[0] if parts else raw_name.strip())
 
     # Points cell
     points = 0
