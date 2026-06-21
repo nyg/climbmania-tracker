@@ -56,6 +56,7 @@ export default function App() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -65,10 +66,13 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
+    const timer = setTimeout(() => setShowLoading(true), 150);
     fetch(`${import.meta.env.BASE_URL}events.json`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setData)
-      .catch(e => setLoadErr(e.message));
+      .catch(e => setLoadErr(e.message))
+      .finally(() => clearTimeout(timer));
+    return () => clearTimeout(timer);
   }, []);
 
   const allAthleteNames = useMemo(() => {
@@ -283,7 +287,7 @@ export default function App() {
       </div>
 
       {/* Loading */}
-      {!data && !loadErr && (
+      {!data && !loadErr && showLoading && (
         <div style={{
           padding: '14px 18px', background: 'var(--bg-card-2)',
           borderRadius: 10, border: '1px solid var(--border)',
