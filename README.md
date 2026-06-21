@@ -5,10 +5,10 @@ Climbmania events — event by event, with a block-level grid per result.
 
 ## How it works
 
-- Event data is pre-scraped and bundled as `public/events.json`.
+- Event data is pre-scraped (`scrape.py`) and bundled as `public/events.json`.
 - The app loads that JSON, lets you search for an athlete by name, and
   shows their rank, points, tops, and zones for every event they entered.
-- The interface is translated into EN / FR / DE / IT and picks the
+- The interface is translated into French, German, Italian and English, and picks the
   right language automatically from the browser locale.
 
 ## Setup
@@ -20,16 +20,7 @@ pnpm install
 # 2. Start the dev server
 pnpm dev
 
-# 3. Open http://localhost:3000, type an athlete name and press Search
-```
-
-That's it. No `.env` file needed.
-
-## Build for production
-
-```bash
-pnpm build
-pnpm preview   # serves the built app at http://localhost:4173
+# 3. Open http://localhost:3000, enter an athlete name and hit the Enter key
 ```
 
 ## Project structure

@@ -111,10 +111,10 @@ export default function App() {
   }, [data, searchQuery, exactSearch]);
 
   const bestTopsResult = results.length ? results.reduce((best, r) => {
-    const rate  = (r.tops.length + r.zones.length) / r.totalBlocks;
-    const bRate = (best.tops.length + best.zones.length) / best.totalBlocks;
+    const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks;
+    const bRate = (best.tops.length + best.zones.length * 0.5) / best.totalBlocks;
     if (rate > bRate) return r;
-    if (rate === bRate && (r.tops.length + r.zones.length) > (best.tops.length + best.zones.length)) return r;
+    if (rate === bRate && (r.tops.length + r.zones.length * 0.5) > (best.tops.length + best.zones.length * 0.5)) return r;
     return best;
   }) : null;
 
@@ -317,7 +317,11 @@ export default function App() {
           <StatCard label={t('eventsFound')} value={results.length} />
           <StatCard
             label={t('bestTopsZones')}
-            value={bestTopsResult ? `${bestTopsResult.tops.length + bestTopsResult.zones.length} / ${bestTopsResult.totalBlocks}` : '—'}
+            value={(() => {
+              if (!bestTopsResult) return '—';
+              const s = bestTopsResult.tops.length + bestTopsResult.zones.length * 0.5;
+              return `${s % 1 === 0 ? s : s.toFixed(1)} / ${bestTopsResult.totalBlocks}`;
+            })()}
             subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
@@ -346,7 +350,7 @@ export default function App() {
           <EventCard
             key={`${r.eventId}-${r.category}`}
             result={r}
-            prevTops={idx > 0 ? results[idx - 1].tops.length : null}
+            prevResult={idx < results.length - 1 ? results[idx + 1] : null}
           />
         ))}
       </div>
