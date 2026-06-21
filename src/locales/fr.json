@@ -25,5 +25,6 @@
   "topsProgressLabel": "TOPS",
   "blockTop": "Bloc {{n}} : TOP ✓",
   "blockZone": "Bloc {{n}} : ZONE seule",
-  "blockEmpty": "Bloc {{n}} : —"
+  "blockEmpty": "Bloc {{n}} : —",
+  "footerDisclaimer": "Ce projet n'est pas affilié à Climbmania et n'est pas approuvé par cette organisation."
 }
