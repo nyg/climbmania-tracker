@@ -135,6 +135,7 @@ export default function App() {
     <div style={{
       minHeight: '100vh', padding: '28px 20px',
       maxWidth: 1260, margin: '0 auto',
+      display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -350,7 +351,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{
-        marginTop: 48, paddingTop: 16,
+        marginTop: 'auto', paddingTop: 16,
         borderTop: '1px solid var(--border)',
         fontSize: 11, color: 'var(--text-ultra-faint)',
         display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
