@@ -35,7 +35,7 @@ function scorePct(tops, zones, totalBlocks) {
 export default function EventCard({ result, prevResult }) {
   const { t, i18n } = useTranslation();
   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
-  const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks } = result;
+  const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes } = result;
   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
@@ -72,7 +72,14 @@ export default function EventCard({ result, prevResult }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>{t('rank', { rank })}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
+            {t('rank', { rank })}
+            {totalAthletes != null && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 5 }}>
+                {t('ofCount', { n: totalAthletes })}
+              </span>
+            )}
+          </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('pts', { points })}</div>
         </div>
       </div>
