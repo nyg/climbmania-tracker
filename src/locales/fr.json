@@ -6,7 +6,7 @@
   "searchButton": "Rechercher",
   "eventsLoaded": "{{count}} événements chargés · dernière mise à jour {{date}}",
   "legendTop": "Top — bloc entièrement complété",
-  "legendZone": "Zone seule — demi-bloc",
+  "legendZone": "Zone seule",
   "legendEmpty": "Non complété",
   "loadingEvents": "Chargement des données…",
   "loadError": "⚠ Erreur de chargement : {{error}}",

@@ -44,7 +44,7 @@ function searchEvents(events, query, exact = false) {
 }
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [loadErr, setLoadErr]         = useState(null);
@@ -253,7 +253,7 @@ export default function App() {
           <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-ultra-faint)' }}>
             {t('eventsLoaded', {
               count: data.events?.length ?? 0,
-              date: new Date(data.scrapedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+              date: new Date(data.scrapedAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short', year: 'numeric' }),
             })}
           </div>
         )}

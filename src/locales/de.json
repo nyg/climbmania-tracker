@@ -6,7 +6,7 @@
   "searchButton": "Suchen",
   "eventsLoaded": "{{count}} Events geladen · zuletzt aktualisiert {{date}}",
   "legendTop": "Top — Block vollständig abgeschlossen",
-  "legendZone": "Zone — halber Block",
+  "legendZone": "Zone",
   "legendEmpty": "Nicht abgeschlossen",
   "loadingEvents": "Eventdaten werden geladen…",
   "loadError": "⚠ Fehler beim Laden: {{error}}",

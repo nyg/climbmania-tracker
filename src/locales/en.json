@@ -6,7 +6,7 @@
   "searchButton": "Search",
   "eventsLoaded": "{{count}} events loaded · last scraped {{date}}",
   "legendTop": "Top — block fully completed",
-  "legendZone": "Zone only — half block",
+  "legendZone": "Zone only",
   "legendEmpty": "Not completed",
   "loadingEvents": "Loading event data…",
   "loadError": "⚠ Failed to load event data: {{error}}",
