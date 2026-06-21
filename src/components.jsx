@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function BlockGrid({ tops = [], zones = [], total = 30 }) {
+  const { t } = useTranslation();
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 10 }}>
       {Array.from({ length: total }, (_, i) => {
@@ -10,10 +12,11 @@ export function BlockGrid({ tops = [], zones = [], total = 30 }) {
         const bg     = isTop ? '#16a34a' : isZone ? '#d97706' : 'var(--bg-block-empty)';
         const label  = String(n);
         const color  = isTop || isZone ? '#fff' : 'var(--text-block-empty)';
+        const tooltip = isTop ? t('blockTop', { n }) : isZone ? t('blockZone', { n }) : t('blockEmpty', { n });
         return (
           <div
             key={n}
-            title={`Block ${n}: ${isTop ? 'TOP ✓' : isZone ? 'ZONE only' : '—'}`}
+            title={tooltip}
             style={{
               width: 26, height: 26, borderRadius: 4,
               background: bg, color, fontWeight: 800, fontSize: 9,

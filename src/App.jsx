@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ProgressBar, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
@@ -43,6 +44,7 @@ function searchEvents(events, query, exact = false) {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [loadErr, setLoadErr]         = useState(null);
@@ -133,11 +135,11 @@ export default function App() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ fontSize: 10, letterSpacing: 4, color: '#6366f1', textTransform: 'uppercase', marginBottom: 6 }}>
-            Climbmania · Block Progress Tracker
+            {t('subtitle')}
           </div>
           <button
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
             style={{
               background: 'none', border: '1px solid var(--border)',
               borderRadius: 8, padding: '6px 8px',
@@ -197,7 +199,7 @@ export default function App() {
                     setFocusedIndex(-1);
                   }
                 }}
-                placeholder="Enter athlete name…"
+                placeholder={t('inputPlaceholder')}
                 disabled={!data && !loadErr}
                 style={{
                   fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
@@ -243,13 +245,16 @@ export default function App() {
                 flexShrink: 0,
               }}
             >
-              Search
+              {t('searchButton')}
             </button>
           </div>
         </h1>
         {data && (
           <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-ultra-faint)' }}>
-            {data.events?.length ?? 0} events loaded · last scraped {new Date(data.scrapedAt).toLocaleDateString('fr-CH', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {t('eventsLoaded', {
+              count: data.events?.length ?? 0,
+              date: new Date(data.scrapedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+            })}
           </div>
         )}
       </div>
@@ -257,9 +262,9 @@ export default function App() {
       {/* Legend */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 11 }}>
         {[
-          ['#16a34a', 'T', 'Top — block fully completed'],
-          ['#d97706', 'Z', 'Zone only — half block'],
-          ['var(--bg-block-empty)', '',  'Not completed'],
+          ['#16a34a', 'T', t('legendTop')],
+          ['#d97706', 'Z', t('legendZone')],
+          ['var(--bg-block-empty)', '',  t('legendEmpty')],
         ].map(([c, l, txt]) => (
           <div key={txt} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
@@ -279,7 +284,7 @@ export default function App() {
           borderRadius: 10, border: '1px solid var(--border)',
           marginBottom: 24, fontSize: 12, color: 'var(--text-muted)',
         }}>
-          Loading event data…
+          {t('loadingEvents')}
           <ProgressBar value={0} max={1} color="#6366f1" />
         </div>
       )}
@@ -291,7 +296,7 @@ export default function App() {
           border: '1px solid var(--error-border)', borderRadius: 8,
           color: 'var(--error-text)', fontSize: 12, marginBottom: 20,
         }}>
-          ⚠ Failed to load event data: {loadErr}
+          {t('loadError', { error: loadErr })}
         </div>
       )}
 
@@ -302,34 +307,34 @@ export default function App() {
           border: '1px solid var(--error-border)', borderRadius: 8,
           color: 'var(--error-text)', fontSize: 12, marginBottom: 20,
         }}>
-          ⚠ "{searchQuery}" was not found in any event.
+          {t('notFound', { name: searchQuery })}
         </div>
       )}
 
       {/* Summary stats */}
       {results.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
-          <StatCard label="Events found" value={results.length} />
+          <StatCard label={t('eventsFound')} value={results.length} />
           <StatCard
-            label="Best tops + zones"
+            label={t('bestTopsZones')}
             value={bestTopsResult ? `${bestTopsResult.tops.length + bestTopsResult.zones.length} / ${bestTopsResult.totalBlocks}` : '—'}
             subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
-            label="Best rank"
+            label={t('bestRank')}
             value={bestRankResult ? (
               <>
                 #{bestRankResult.rank}
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 5 }}>
-                  of {bestRankResult.totalAthletes}
+                  {t('ofCount', { n: bestRankResult.totalAthletes })}
                 </span>
               </>
             ) : '—'}
             subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
           />
           <StatCard
-            label="Best score"
-            value={bestPointsResult ? `${bestPointsResult.points} pts` : '—'}
+            label={t('bestScore')}
+            value={bestPointsResult ? t('pts', { points: bestPointsResult.points }) : '—'}
             subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
           />
         </div>

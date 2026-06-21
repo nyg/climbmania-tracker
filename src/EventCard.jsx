@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { BlockGrid, ProgressBar } from './components.jsx';
 
 export default function EventCard({ result, prevTops }) {
+  const { t } = useTranslation();
   const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks } = result;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
@@ -29,8 +31,8 @@ export default function EventCard({ result, prevTops }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>Rank #{rank}</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{points} pts</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>{t('rank', { rank })}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('pts', { points })}</div>
         </div>
       </div>
 
@@ -38,12 +40,12 @@ export default function EventCard({ result, prevTops }) {
       <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
           <span style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{topsCount}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>tops / {totalBlocks}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('topsLabel', { total: totalBlocks })}</span>
         </div>
         {zonesCount > 0 && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{zonesCount}</span>
-            <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>zones only</span>
+            <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('zonesOnly')}</span>
           </div>
         )}
         {diff !== null && (
@@ -51,14 +53,14 @@ export default function EventCard({ result, prevTops }) {
             marginLeft: 'auto', fontSize: 12, fontWeight: 700,
             padding: '3px 10px', borderRadius: 20, ...diffStyle,
           }}>
-            {diff > 0 ? `▲ +${diff}` : diff < 0 ? `▼ ${diff}` : '→ same'}
+            {diff > 0 ? `▲ +${diff}` : diff < 0 ? `▼ ${diff}` : t('diffSame')}
           </div>
         )}
       </div>
 
       {/* Progress bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', width: 28 }}>TOPS</span>
+        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', width: 28 }}>{t('topsProgressLabel')}</span>
         <ProgressBar value={topsCount} max={totalBlocks} color="#22c55e" />
         <span style={{ fontSize: 10, color: '#22c55e', width: 36 }}>
           {totalBlocks > 0 ? Math.round(topsCount / totalBlocks * 100) : 0}%
