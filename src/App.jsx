@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ProgressBar, StatCard } from './components.jsx';
+import { StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
 function getInitialTheme() {
@@ -56,7 +56,6 @@ export default function App() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -66,13 +65,10 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowLoading(true), 150);
     fetch(`${import.meta.env.BASE_URL}events.json`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(setData)
-      .catch(e => setLoadErr(e.message))
-      .finally(() => clearTimeout(timer));
-    return () => clearTimeout(timer);
+      .catch(e => setLoadErr(e.message));
   }, []);
 
   const allAthleteNames = useMemo(() => {
@@ -285,18 +281,6 @@ export default function App() {
           </div>
         ))}
       </div>
-
-      {/* Loading */}
-      {!data && !loadErr && showLoading && (
-        <div style={{
-          padding: '14px 18px', background: 'var(--bg-card-2)',
-          borderRadius: 10, border: '1px solid var(--border)',
-          marginBottom: 24, fontSize: 12, color: 'var(--text-muted)',
-        }}>
-          {t('loadingEvents')}
-          <ProgressBar value={0} max={1} color="#6366f1" />
-        </div>
-      )}
 
       {/* Load error */}
       {loadErr && (
