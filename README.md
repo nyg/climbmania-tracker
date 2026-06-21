@@ -1,16 +1,15 @@
 # Climbmania Tracker · Block Progress
 
-A local React app that scans Climbmania events #152→#183, finds an athlete
-in each one, and shows which blocks they topped or zoned — event by event.
+A React app that visualises a bouldering athlete's tops and zones across
+Climbmania events — event by event, with a block-level grid per result.
 
 ## How it works
 
-- Vite's dev server proxies `/climbmania/*` → `https://www.climbmania.ch/*`  
-  This sidesteps CORS: the request is made server-side, and the real HTML
-  (including `top-ok` / `zone-ok` CSS classes) comes back intact.
-- The app parses the HTML with `DOMParser`, finds the athlete's `<tr>`,
-  and reads every block `<td>` for those CSS classes.
-- No API key needed — everything runs locally.
+- Event data is pre-scraped and bundled as `public/events.json`.
+- The app loads that JSON, lets you search for an athlete by name, and
+  shows their rank, points, tops, and zones for every event they entered.
+- The interface is translated into EN / FR / DE / IT and picks the
+  right language automatically from the browser locale.
 
 ## Setup
 
@@ -21,7 +20,7 @@ pnpm install
 # 2. Start the dev server
 pnpm dev
 
-# 3. Open http://localhost:3000, enter an athlete name and hit "SCAN ALL EVENTS"
+# 3. Open http://localhost:3000, type an athlete name and press Search
 ```
 
 That's it. No `.env` file needed.
@@ -33,22 +32,22 @@ pnpm build
 pnpm preview   # serves the built app at http://localhost:4173
 ```
 
-> Note: the proxy only works in dev mode (`pnpm dev`).  
-> For a production build you'd need a small backend to relay requests.
-
 ## Project structure
 
 ```
 climbmania-tracker/
 ├── index.html
-├── vite.config.js      ← proxy config lives here
-├── pnpm-workspace.yaml ← pnpm allowed build scripts
+├── vite.config.js          ← Vite config
+├── pnpm-workspace.yaml     ← pnpm allowed build scripts
 ├── package.json
+├── public/
+│   └── events.json         ← pre-scraped event data
 └── src/
-    ├── main.jsx        ← React entry point
-    ├── index.css       ← global styles
-    ├── App.jsx         ← scan loop + layout
-    ├── EventCard.jsx   ← per-event result card
-    ├── components.jsx  ← BlockGrid, ProgressBar, StatCard
-    └── fetcher.js      ← fetch + DOMParser logic
+    ├── main.jsx            ← React entry point
+    ├── index.css           ← global styles + CSS variables
+    ├── i18n.js             ← i18next setup with browser locale detection
+    ├── locales/            ← translation files (en, fr, de, it)
+    ├── App.jsx             ← search, state, layout
+    ├── EventCard.jsx       ← per-event result card
+    └── components.jsx      ← BlockGrid, ProgressBar, StatCard
 ```
