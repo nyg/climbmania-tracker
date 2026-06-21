@@ -11,14 +11,16 @@ function getInitialTheme() {
 
 function searchEvents(events, query, exact = false) {
   const q = query.trim().toLowerCase();
+  const tokens = q.split(/\s+/).filter(Boolean);
   const results = [];
 
   for (const event of events) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
+        const lower = athlete.name.toLowerCase();
         const match = exact
-          ? athlete.name.toLowerCase() === q
-          : athlete.name.toLowerCase().includes(q);
+          ? lower === q
+          : tokens.every(tok => lower.includes(tok));
         if (match) {
           results.push({
             eventId: event.id,
@@ -83,9 +85,12 @@ export default function App() {
   }, [data]);
 
   const suggestions = useMemo(() => {
-    const q = name.trim().toLowerCase();
-    if (!q) return [];
-    return allAthleteNames.filter(n => n.toLowerCase().includes(q));
+    const tokens = name.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return [];
+    return allAthleteNames.filter(n => {
+      const lower = n.toLowerCase();
+      return tokens.every(tok => lower.includes(tok));
+    });
   }, [name, allAthleteNames]);
 
   useEffect(() => { setFocusedIndex(-1); }, [suggestions]);
