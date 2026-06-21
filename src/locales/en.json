@@ -19,6 +19,7 @@
   "rank": "Rank #{{rank}}",
   "pts": "{{points}} pts",
   "topsLabel": "tops / {{total}}",
+  "ptsLabel": "pts / {{total}}",
   "zonesOnly": "zones only",
   "diffSame": "→ same",
   "topsProgressLabel": "TOPS",
