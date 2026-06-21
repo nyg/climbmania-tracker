@@ -244,6 +244,14 @@ def parse_results_page(soup: BeautifulSoup) -> list[dict]:
     return categories
 
 
+def _parse_event_date(date_str: str) -> datetime | None:
+    """Parse an event date string like 'Saturday 9 May 2026'. Returns None on failure."""
+    try:
+        return datetime.strptime(date_str.strip(), "%A %d %B %Y")
+    except ValueError:
+        return None
+
+
 def scrape(output: str, delay: float) -> None:
     session = requests.Session()
 
@@ -253,9 +261,18 @@ def scrape(output: str, delay: float) -> None:
         print("Failed to fetch group page.", file=sys.stderr)
         sys.exit(1)
 
-    events_meta = discover_events(group_soup)
+    today = datetime.now(timezone.utc).replace(tzinfo=None).date()
+    all_events = discover_events(group_soup)
+    events_meta = []
+    for ev in all_events:
+        parsed = _parse_event_date(ev["date"])
+        if parsed is not None and parsed.date() > today:
+            print(f"  ↷ Skipping future event {ev['id']} — {ev['title']} ({ev['date']})")
+        else:
+            events_meta.append(ev)
+
     total = len(events_meta)
-    print(f"Found {total} events.\n")
+    print(f"Found {total} past events.\n")
 
     events_out: list[dict] = []
 

@@ -15,14 +15,35 @@ function ExternalLinkIcon() {
   );
 }
 
-export default function EventCard({ result, prevTops }) {
+const MONTHS = { January:0, February:1, March:2, April:3, May:4, June:5, July:6, August:7, September:8, October:9, November:10, December:11 };
+
+function parseEventDate(str, lang) {
+  const m = str && str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+  if (!m || MONTHS[m[2]] === undefined) return str;
+  return new Date(+m[3], MONTHS[m[2]], +m[1])
+    .toLocaleDateString(lang || undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function weightedScore(tops, zones) {
+  return tops.length + zones.length * 0.5;
+}
+
+function scorePct(tops, zones, totalBlocks) {
+  return totalBlocks > 0 ? weightedScore(tops, zones) / totalBlocks * 100 : 0;
+}
+
+export default function EventCard({ result, prevResult }) {
   const { t, i18n } = useTranslation();
   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
   const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks } = result;
   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
-  const diff       = prevTops !== null ? topsCount - prevTops : null;
+  const score      = weightedScore(tops, zones);
+  const pct        = scorePct(tops, zones, totalBlocks);
+
+  const prevPct    = prevResult ? scorePct(prevResult.tops ?? [], prevResult.zones ?? [], prevResult.totalBlocks) : null;
+  const diff       = prevPct !== null ? Math.round((pct - prevPct) * 10) / 10 : null;
 
   const diffStyle = diff === null ? null : {
     color:      diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : 'var(--text-faint)',
@@ -38,7 +59,7 @@ export default function EventCard({ result, prevTops }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: 10, color: '#6366f1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 3 }}>
-            #{eventId}{eventDate ? ` · ${eventDate}` : ''}
+            #{eventId}{eventDate ? ` · ${parseEventDate(eventDate, i18n.language)}` : ''}
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 5 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
@@ -59,13 +80,12 @@ export default function EventCard({ result, prevTops }) {
       {/* Counts + diff badge */}
       <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{topsCount}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('topsLabel', { total: totalBlocks })}</span>
+          <span style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{score % 1 === 0 ? score : score.toFixed(1)}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('ptsLabel', { total: totalBlocks })}</span>
         </div>
         {zonesCount > 0 && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: 28, fontWeight: 900, color: '#f59e0b' }}>{zonesCount}</span>
-            <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('zonesOnly')}</span>
+            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>{topsCount}T + {zonesCount}Z</span>
           </div>
         )}
         {diff !== null && (
@@ -73,7 +93,7 @@ export default function EventCard({ result, prevTops }) {
             marginLeft: 'auto', fontSize: 12, fontWeight: 700,
             padding: '3px 10px', borderRadius: 20, ...diffStyle,
           }}>
-            {diff > 0 ? `▲ +${diff}` : diff < 0 ? `▼ ${diff}` : t('diffSame')}
+            {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
           </div>
         )}
       </div>
@@ -81,9 +101,9 @@ export default function EventCard({ result, prevTops }) {
       {/* Progress bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', width: 28 }}>{t('topsProgressLabel')}</span>
-        <ProgressBar value={topsCount} max={totalBlocks} color="#22c55e" />
+        <ProgressBar value={score} max={totalBlocks} color="#22c55e" />
         <span style={{ fontSize: 10, color: '#22c55e', width: 36 }}>
-          {totalBlocks > 0 ? Math.round(topsCount / totalBlocks * 100) : 0}%
+          {Math.round(pct)}%
         </span>
       </div>
 
