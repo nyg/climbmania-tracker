@@ -22,7 +22,7 @@
   "ptsLabel": "pts / {{total}}",
   "zonesOnly": "zones only",
   "diffSame": "→ same",
-  "topsProgressLabel": "TOPS",
+  "topsProgressLabel": "TOPS + ZONES",
   "blockTop": "Block {{n}}: TOP ✓",
   "blockZone": "Block {{n}}: ZONE only",
   "blockEmpty": "Block {{n}}: —",

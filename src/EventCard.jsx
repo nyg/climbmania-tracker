@@ -58,9 +58,6 @@ export default function EventCard({ result, prevResult }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 10, color: '#6366f1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 3 }}>
-            #{eventId}{eventDate ? ` · ${parseEventDate(eventDate, i18n.language)}` : ''}
-          </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 5 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
             <a href={eventUrl} target="_blank" rel="noopener noreferrer"
@@ -71,6 +68,11 @@ export default function EventCard({ result, prevResult }) {
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
+          {eventDate && (
+            <div style={{ fontSize: 10, color: '#6366f1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 3 }}>
+              {parseEventDate(eventDate, i18n.language)}
+            </div>
+          )}
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
             {t('rank', { rank })}
@@ -80,38 +82,30 @@ export default function EventCard({ result, prevResult }) {
               </span>
             )}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('pts', { points })}</div>
         </div>
       </div>
 
-      {/* Counts + diff badge */}
-      <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{score % 1 === 0 ? score : score.toFixed(1)}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('ptsLabel', { total: totalBlocks })}</span>
-        </div>
-        {zonesCount > 0 && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>{topsCount}T + {zonesCount}Z</span>
-          </div>
-        )}
-        {diff !== null && (
-          <div style={{
-            marginLeft: 'auto', fontSize: 12, fontWeight: 700,
-            padding: '3px 10px', borderRadius: 20, ...diffStyle,
-          }}>
-            {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
-          </div>
-        )}
+      {/* Counts */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{topsCount}T + {zonesCount}Z</span>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {score % 1 === 0 ? score : score.toFixed(1)} pts</span>
       </div>
 
       {/* Progress bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', width: 28 }}>{t('topsProgressLabel')}</span>
+        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', whiteSpace: 'nowrap' }}>{t('topsProgressLabel')}</span>
         <ProgressBar value={score} max={totalBlocks} color="#22c55e" />
-        <span style={{ fontSize: 10, color: '#22c55e', width: 36 }}>
+        <span style={{ fontSize: 10, color: '#22c55e', whiteSpace: 'nowrap' }}>
           {Math.round(pct)}%
         </span>
+        {diff !== null && (
+          <div style={{
+            fontSize: 12, fontWeight: 700,
+            padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap', ...diffStyle,
+          }}>
+            {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
+          </div>
+        )}
       </div>
 
       {/* Block grid */}
