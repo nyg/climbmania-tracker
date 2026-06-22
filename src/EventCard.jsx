@@ -75,21 +75,27 @@ export default function EventCard({ result, prevResult }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
-            {t('rank', { rank })}
-            {totalAthletes != null && (
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 5 }}>
-                {t('ofCount', { n: totalAthletes })}
-              </span>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* Counts */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{topsCount}T + {zonesCount}Z</span>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {points} pts</span>
+      {/* Counts + rank */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{topsCount}T</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-faint)', margin: '0 2px' }}> + </span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b' }}>{zonesCount}Z</span>
+          </span>
+          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {points} pts</span>
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
+          {t('rank', { rank })}
+          {totalAthletes != null && (
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 5 }}>
+              {t('ofCount', { n: totalAthletes })}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Progress bar */}

@@ -11,7 +11,7 @@
   "loadingEvents": "Loading event data…",
   "loadError": "⚠ Failed to load event data: {{error}}",
   "notFound": "⚠ \"{{name}}\" was not found in any event.",
-  "eventsFound": "Events found",
+  "eventsFound": "Events",
   "bestTopsZones": "Best tops + zones",
   "bestRank": "Best rank",
   "bestScore": "Best score",
