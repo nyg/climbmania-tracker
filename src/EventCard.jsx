@@ -58,16 +58,19 @@ export default function EventCard({ result, prevResult }) {
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
-            {eventDate && (
-              <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
-                {parseEventDate(eventDate, i18n.language)}
-              </span>
-            )}
             <a href={eventUrl} target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
               title="Open event results">
               <ExternalLinkIcon />
             </a>
+            {eventDate && (
+              <>
+                <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>
+                <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                  {parseEventDate(eventDate, i18n.language)}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
