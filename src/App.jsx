@@ -351,7 +351,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{
-        marginTop: 'auto', paddingTop: 16,
+        marginTop: 40, paddingTop: 16,
         borderTop: '1px solid var(--border)',
         fontSize: 11, color: 'var(--text-ultra-faint)',
         display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
