@@ -54,7 +54,7 @@ export default function EventCard({ result, prevResult }) {
       borderRadius: 12, border: '1px solid var(--border)',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
