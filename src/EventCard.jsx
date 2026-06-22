@@ -45,10 +45,8 @@ export default function EventCard({ result, prevResult }) {
   const prevPct    = prevResult ? scorePct(prevResult.tops ?? [], prevResult.zones ?? [], prevResult.totalBlocks) : null;
   const diff       = prevPct !== null ? Math.round((pct - prevPct) * 10) / 10 : null;
 
-  const diffStyle = diff === null ? null : {
-    color:      diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : 'var(--text-faint)',
-    background: diff > 0 ? 'var(--diff-pos-bg)' : diff < 0 ? 'var(--diff-neg-bg)' : 'var(--diff-neutral-bg)',
-  };
+  const diffColor = diff === null ? null
+    : diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : 'var(--text-faint)';
 
   return (
     <div style={{
@@ -56,62 +54,65 @@ export default function EventCard({ result, prevResult }) {
       borderRadius: 12, border: '1px solid var(--border)',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 10, color: '#6366f1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 3 }}>
-            #{eventId}{eventDate ? ` · ${parseEventDate(eventDate, i18n.language)}` : ''}
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
             <a href={eventUrl} target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
               title="Open event results">
               <ExternalLinkIcon />
             </a>
+            {eventDate && (
+              <>
+                <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>
+                <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                  {parseEventDate(eventDate, i18n.language)}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
-            {t('rank', { rank })}
-            {totalAthletes != null && (
-              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 5 }}>
-                {t('ofCount', { n: totalAthletes })}
-              </span>
-            )}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('pts', { points })}</div>
         </div>
       </div>
 
-      {/* Counts + diff badge */}
-      <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: 28, fontWeight: 900, color: '#22c55e' }}>{score % 1 === 0 ? score : score.toFixed(1)}</span>
-          <span style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{t('ptsLabel', { total: totalBlocks })}</span>
+      {/* Counts + rank */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+          <span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{topsCount}T</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-faint)', margin: '0 2px' }}> + </span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b' }}>{zonesCount}Z</span>
+          </span>
+          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {points} pts</span>
         </div>
-        {zonesCount > 0 && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: 13, color: 'var(--text-faint)' }}>{topsCount}T + {zonesCount}Z</span>
-          </div>
-        )}
-        {diff !== null && (
-          <div style={{
-            marginLeft: 'auto', fontSize: 12, fontWeight: 700,
-            padding: '3px 10px', borderRadius: 20, ...diffStyle,
-          }}>
-            {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
-          </div>
-        )}
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
+          {t('rank', { rank })}
+          {totalAthletes != null && (
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 5 }}>
+              {t('ofCount', { n: totalAthletes })}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Progress bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', width: 28 }}>{t('topsProgressLabel')}</span>
+        <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', whiteSpace: 'nowrap' }}>{t('topsProgressLabel')}</span>
         <ProgressBar value={score} max={totalBlocks} color="#22c55e" />
-        <span style={{ fontSize: 10, color: '#22c55e', width: 36 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap' }}>
           {Math.round(pct)}%
         </span>
+        {diff !== null && (
+          <>
+            <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>
+            <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', color: diffColor }}>
+              {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
+            </span>
+          </>
+        )}
       </div>
 
       {/* Block grid */}
