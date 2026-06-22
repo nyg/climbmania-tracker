@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
+
+function useIsMobile(breakpoint = 600) {
+  const mq = typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${breakpoint}px)`) : null;
+  const [isMobile, setIsMobile] = useState(mq ? mq.matches : false);
+  useEffect(() => {
+    if (!mq) return;
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return isMobile;
+}
 
 function getInitialTheme() {
   const stored = localStorage.getItem('theme');
@@ -47,6 +59,7 @@ function searchEvents(events, query, exact = false) {
 
 export default function App() {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [loadErr, setLoadErr]         = useState(null);
@@ -307,8 +320,8 @@ export default function App() {
 
       {/* Summary stats */}
       {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
-          <StatCard label={t('eventsFound')} value={results.length} />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
+          <StatCard label={t('eventsFound')} value={results.length} isMobile={isMobile} />
           <StatCard
             label={t('bestTopsZones')}
             value={(() => {
@@ -317,23 +330,26 @@ export default function App() {
               return `${s % 1 === 0 ? s : s.toFixed(1)} / ${bestTopsResult.totalBlocks}`;
             })()}
             subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
           <StatCard
             label={t('bestRank')}
             value={bestRankResult ? (
               <>
                 #{bestRankResult.rank}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 5 }}>
+                <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 4 }}>
                   {t('ofCount', { n: bestRankResult.totalAthletes })}
                 </span>
               </>
             ) : '—'}
             subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
           <StatCard
             label={t('bestScore')}
             value={bestPointsResult ? t('pts', { points: bestPointsResult.points }) : '—'}
             subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
         </div>
       )}
