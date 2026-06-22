@@ -358,7 +358,7 @@ export default function App() {
       )}
 
       {/* Event cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 40 }}>
         {results.map((r, idx) => (
           <EventCard
             key={`${r.eventId}-${r.category}`}
