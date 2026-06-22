@@ -358,7 +358,7 @@ export default function App() {
       )}
 
       {/* Event cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 40 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 28 }}>
         {results.map((r, idx) => (
           <EventCard
             key={`${r.eventId}-${r.category}`}
@@ -370,7 +370,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{
-        marginTop: 'auto', paddingTop: 40,
+        marginTop: 'auto', paddingTop: 28,
         borderTop: '1px solid var(--border)',
         fontSize: 11, color: 'var(--text-ultra-faint)',
         display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
