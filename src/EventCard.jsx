@@ -45,10 +45,8 @@ export default function EventCard({ result, prevResult }) {
   const prevPct    = prevResult ? scorePct(prevResult.tops ?? [], prevResult.zones ?? [], prevResult.totalBlocks) : null;
   const diff       = prevPct !== null ? Math.round((pct - prevPct) * 10) / 10 : null;
 
-  const diffStyle = diff === null ? null : {
-    color:      diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : 'var(--text-faint)',
-    background: diff > 0 ? 'var(--diff-pos-bg)' : diff < 0 ? 'var(--diff-neg-bg)' : 'var(--diff-neutral-bg)',
-  };
+  const diffColor = diff === null ? null
+    : diff > 0 ? '#22c55e' : diff < 0 ? '#f87171' : 'var(--text-faint)';
 
   return (
     <div style={{
@@ -58,8 +56,13 @@ export default function EventCard({ result, prevResult }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
+            {eventDate && (
+              <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                {parseEventDate(eventDate, i18n.language)}
+              </span>
+            )}
             <a href={eventUrl} target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
               title="Open event results">
@@ -68,11 +71,6 @@ export default function EventCard({ result, prevResult }) {
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          {eventDate && (
-            <div style={{ fontSize: 10, color: '#6366f1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 3 }}>
-              {parseEventDate(eventDate, i18n.language)}
-            </div>
-          )}
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-secondary)' }}>
             {t('rank', { rank })}
@@ -88,23 +86,23 @@ export default function EventCard({ result, prevResult }) {
       {/* Counts */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
         <span style={{ fontSize: 18, fontWeight: 800, color: '#22c55e' }}>{topsCount}T + {zonesCount}Z</span>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {score % 1 === 0 ? score : score.toFixed(1)} pts</span>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>· {points} pts</span>
       </div>
 
       {/* Progress bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)', whiteSpace: 'nowrap' }}>{t('topsProgressLabel')}</span>
         <ProgressBar value={score} max={totalBlocks} color="#22c55e" />
-        <span style={{ fontSize: 10, color: '#22c55e', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#22c55e', whiteSpace: 'nowrap' }}>
           {Math.round(pct)}%
         </span>
         {diff !== null && (
-          <div style={{
-            fontSize: 12, fontWeight: 700,
-            padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap', ...diffStyle,
-          }}>
-            {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
-          </div>
+          <>
+            <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>
+            <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', color: diffColor }}>
+              {diff > 0 ? `▲ +${diff}%` : diff < 0 ? `▼ ${diff}%` : t('diffSame')}
+            </span>
+          </>
         )}
       </div>
 
