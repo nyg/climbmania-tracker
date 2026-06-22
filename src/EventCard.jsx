@@ -56,7 +56,7 @@ export default function EventCard({ result, prevResult }) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
             {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
             <a href={eventUrl} target="_blank" rel="noopener noreferrer"
               style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
