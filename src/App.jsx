@@ -188,7 +188,7 @@ export default function App() {
             )}
           </button>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Input + dropdown wrapper */}
             <div style={{ position: 'relative', flex: 1 }}>
@@ -221,7 +221,7 @@ export default function App() {
                 placeholder={t('inputPlaceholder')}
                 disabled={!data && !loadErr}
                 style={{
-                  fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
+                  fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
                   background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
                   outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
                 }}
