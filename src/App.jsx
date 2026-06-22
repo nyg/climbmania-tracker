@@ -190,7 +190,7 @@ export default function App() {
                 placeholder={t('inputPlaceholder')}
                 disabled={!data && !loadErr}
                 style={{
-                  fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
+                  fontSize: isMobile ? 16 : 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
                   background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
                   outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
                 }}
@@ -280,6 +280,7 @@ export default function App() {
       </div>
 
       {/* Legend */}
+      {results.length > 0 && (
       <div style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 11 }}>
         {[
           ['#16a34a', 'T', t('legendTop')],
@@ -296,6 +297,7 @@ export default function App() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Load error */}
       {loadErr && (
@@ -368,7 +370,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{
-        marginTop: 40, paddingTop: 16,
+        marginTop: 'auto', paddingTop: 40,
         borderTop: '1px solid var(--border)',
         fontSize: 11, color: 'var(--text-ultra-faint)',
         display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
