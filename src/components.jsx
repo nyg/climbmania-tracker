@@ -46,16 +46,17 @@ export function ProgressBar({ value, max, color = '#22c55e' }) {
   );
 }
 
-export function StatCard({ label, value, subtitle }) {
+export function StatCard({ label, value, subtitle, isMobile = false }) {
   return (
     <div style={{
-      padding: '12px 14px', background: 'var(--bg-card-2)',
+      padding: isMobile ? '10px 12px' : '12px 14px',
+      background: 'var(--bg-card-2)',
       borderRadius: 10, border: '1px solid var(--border)',
     }}>
       <div style={{ fontSize: 10, color: 'var(--text-ultra-faint)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
         {label}
       </div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: '#6366f1' }}>{value}</div>
+      <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 800, color: '#6366f1', lineHeight: 1.2 }}>{value}</div>
       {subtitle && (
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.3 }}>
           {subtitle}

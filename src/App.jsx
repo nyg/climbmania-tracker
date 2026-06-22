@@ -1,7 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
+
+function useIsMobile(breakpoint = 600) {
+  const mq = typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${breakpoint}px)`) : null;
+  const [isMobile, setIsMobile] = useState(mq ? mq.matches : false);
+  useEffect(() => {
+    if (!mq) return;
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return isMobile;
+}
 
 function getInitialTheme() {
   const stored = localStorage.getItem('theme');
@@ -47,6 +59,7 @@ function searchEvents(events, query, exact = false) {
 
 export default function App() {
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [loadErr, setLoadErr]         = useState(null);
@@ -139,43 +152,12 @@ export default function App() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ fontSize: 10, letterSpacing: 4, color: '#6366f1', textTransform: 'uppercase', marginBottom: 6 }}>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ fontSize: 10, letterSpacing: 4, color: '#6366f1', textTransform: 'uppercase' }}>
             {t('subtitle')}
           </div>
-          <button
-            onClick={toggleTheme}
-            title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
-            style={{
-              background: 'none', border: '1px solid var(--border)',
-              borderRadius: 8, padding: '6px 8px',
-              cursor: 'pointer', lineHeight: 0,
-              color: 'var(--text-muted)',
-              display: 'flex', alignItems: 'center',
-            }}
-          >
-            {theme === 'dark' ? (
-              /* Sun */
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4"/>
-                <line x1="12" y1="2"     x2="12" y2="4"/>
-                <line x1="12" y1="20"    x2="12" y2="22"/>
-                <line x1="4.22" y1="4.22"   x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="2"  y1="12"    x2="4"  y2="12"/>
-                <line x1="20" y1="12"    x2="22" y2="12"/>
-                <line x1="4.22" y1="19.78"  x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              /* Moon */
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
+        <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Input + dropdown wrapper */}
             <div style={{ position: 'relative', flex: 1 }}>
@@ -208,7 +190,7 @@ export default function App() {
                 placeholder={t('inputPlaceholder')}
                 disabled={!data && !loadErr}
                 style={{
-                  fontSize: 26, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
+                  fontSize: isMobile ? 16 : 20, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: -0.5,
                   background: 'transparent', border: 'none', borderBottom: '2px solid #6366f1',
                   outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
                 }}
@@ -253,6 +235,38 @@ export default function App() {
             >
               {t('searchButton')}
             </button>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+              style={{
+                background: 'none', border: '1px solid var(--border)',
+                borderRadius: 8, padding: '6px 8px',
+                cursor: 'pointer', lineHeight: 0,
+                color: 'var(--text-muted)',
+                display: 'flex', alignItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {theme === 'dark' ? (
+                /* Sun */
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4"/>
+                  <line x1="12" y1="2"     x2="12" y2="4"/>
+                  <line x1="12" y1="20"    x2="12" y2="22"/>
+                  <line x1="4.22" y1="4.22"   x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="2"  y1="12"    x2="4"  y2="12"/>
+                  <line x1="20" y1="12"    x2="22" y2="12"/>
+                  <line x1="4.22" y1="19.78"  x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+                </svg>
+              ) : (
+                /* Moon */
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              )}
+            </button>
           </div>
         </h1>
         {data && (
@@ -266,6 +280,7 @@ export default function App() {
       </div>
 
       {/* Legend */}
+      {results.length > 0 && (
       <div style={{ display: 'flex', gap: 16, marginBottom: 20, fontSize: 11 }}>
         {[
           ['#16a34a', 'T', t('legendTop')],
@@ -282,6 +297,7 @@ export default function App() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Load error */}
       {loadErr && (
@@ -307,8 +323,8 @@ export default function App() {
 
       {/* Summary stats */}
       {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
-          <StatCard label={t('eventsFound')} value={results.length} />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
+          <StatCard label={t('eventsFound')} value={results.length} isMobile={isMobile} />
           <StatCard
             label={t('bestTopsZones')}
             value={(() => {
@@ -317,29 +333,32 @@ export default function App() {
               return `${s % 1 === 0 ? s : s.toFixed(1)} / ${bestTopsResult.totalBlocks}`;
             })()}
             subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
           <StatCard
             label={t('bestRank')}
             value={bestRankResult ? (
               <>
                 #{bestRankResult.rank}
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 5 }}>
+                <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 4 }}>
                   {t('ofCount', { n: bestRankResult.totalAthletes })}
                 </span>
               </>
             ) : '—'}
             subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
           <StatCard
             label={t('bestScore')}
             value={bestPointsResult ? t('pts', { points: bestPointsResult.points }) : '—'}
             subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
+            isMobile={isMobile}
           />
         </div>
       )}
 
       {/* Event cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 28 }}>
         {results.map((r, idx) => (
           <EventCard
             key={`${r.eventId}-${r.category}`}
@@ -351,7 +370,7 @@ export default function App() {
 
       {/* Footer */}
       <footer style={{
-        marginTop: 40, paddingTop: 16,
+        marginTop: 'auto', paddingTop: 28,
         borderTop: '1px solid var(--border)',
         fontSize: 11, color: 'var(--text-ultra-faint)',
         display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center',
