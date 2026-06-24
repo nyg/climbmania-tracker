@@ -123,6 +123,15 @@ export default function App() {
     setFocusedIndex(-1);
   };
 
+  useEffect(() => {
+    if (!searchQuery) return;
+    window.goatcounter?.count({
+      path: `/search/${encodeURIComponent(searchQuery)}`,
+      title: searchQuery,
+      event: true,
+    });
+  }, [searchQuery]);
+
   const results = useMemo(() => {
     if (!data || !searchQuery) return [];
     return searchEvents(data.events ?? [], searchQuery, exactSearch);
