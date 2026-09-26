@@ -237,10 +237,11 @@ def parse_results_page(soup: BeautifulSoup) -> list[dict]:
 
         for row in rows[1:]:
             athlete = parse_athlete_row(row)
-            if athlete:
+            if athlete and athlete["points"] > 0:
                 athletes.append(athlete)
 
-        categories.append({"name": category_name, "athletes": athletes})
+        if athletes:
+            categories.append({"name": category_name, "athletes": athletes})
 
     return categories
 
@@ -287,6 +288,10 @@ def scrape(output: str, delay: float) -> None:
             continue
 
         categories = parse_results_page(results_soup)
+        if not categories:
+            print(f"  Skipping event {meta['id']} (no scored athletes).")
+            continue
+
         athlete_count = sum(len(c["athletes"]) for c in categories)
         print(f"  {len(categories)} categories, {athlete_count} athletes")
 

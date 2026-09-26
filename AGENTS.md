@@ -22,7 +22,7 @@ A single-page React 19 + Vite app. Data is pre-scraped offline by a Python scrip
 There is **no live scraping** and **no Vite proxy** — the old CORS workaround has been removed entirely.
 
 **Data pipeline:**
-1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones) and writes everything to `public/events.json`. Applies name normalisation via `public/name-merges.json`.
+1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones), skips athletes with 0 points and any category or event left without athletes, and writes everything to `public/events.json`. Applies name normalisation via `public/name-merges.json`.
 2. `public/events.json` — static snapshot served alongside the app. Shape: `{ scrapedAt, sourceUrl, events: [{ id, title, date, url, categories: [{ name, athletes: [{ rank, name, points, tops, zones, totalBlocks }] }] }] }`. `tops` and `zones` are arrays of 1-based block numbers.
 3. `public/name-merges.json` — JSON array of name groups; first element is canonical. Used to deduplicate athletes who appear under slightly different spellings across events.
 
