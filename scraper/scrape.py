@@ -307,7 +307,7 @@ def scrape(output: str, delay: float) -> None:
     }
 
     with open(output, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
 
     print(f"\nWrote {len(events_out)} events to {output}")
 
