@@ -1,4 +1,4 @@
-# Copilot Instructions — Climbmania Tracker
+# Climbmania Tracker
 
 ## Commands
 
@@ -9,9 +9,8 @@ pnpm build       # production build
 pnpm preview     # serve production build at http://localhost:4173
 
 # Python scraper (run separately to refresh data)
-pip install -r requirements.txt
-python scrape.py                          # writes public/events.json
-python scrape.py --output path/to/out.json --delay 0.5
+./scraper/scrape.sh                        # creates scraper/.venv, installs deps, writes public/events.json
+./scraper/scrape.sh --output path/to/out.json --delay 0.5
 ```
 
 No test runner or linter is configured.
@@ -23,7 +22,7 @@ A single-page React 19 + Vite app. Data is pre-scraped offline by a Python scrip
 There is **no live scraping** and **no Vite proxy** — the old CORS workaround has been removed entirely.
 
 **Data pipeline:**
-1. `scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones) and writes everything to `public/events.json`. Applies name normalisation via `public/name-merges.json`.
+1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones) and writes everything to `public/events.json`. Applies name normalisation via `public/name-merges.json`.
 2. `public/events.json` — static snapshot served alongside the app. Shape: `{ scrapedAt, sourceUrl, events: [{ id, title, date, url, categories: [{ name, athletes: [{ rank, name, points, tops, zones, totalBlocks }] }] }] }`. `tops` and `zones` are arrays of 1-based block numbers.
 3. `public/name-merges.json` — JSON array of name groups; first element is canonical. Used to deduplicate athletes who appear under slightly different spellings across events.
 
@@ -49,7 +48,7 @@ Key tokens:
 
 Fixed accent colours (same in both themes): indigo `#6366f1`, tops green `#16a34a` / `#22c55e`, zones amber `#d97706` / `#f59e0b`.
 
-**Block data is arrays of 1-based block numbers** (`tops: [1, 3, 5]`, `zones: [2]`). `BlockGrid` iterates from 1 to `total` and checks `tops.includes(n)` / `zones.includes(n)`. If the scraper's parsing changes, update `parse_blocks()` in `scrape.py`.
+**Block data is arrays of 1-based block numbers** (`tops: [1, 3, 5]`, `zones: [2]`). `BlockGrid` iterates from 1 to `total` and checks `tops.includes(n)` / `zones.includes(n)`. If the scraper's parsing changes, update `parse_blocks()` in `scraper/scrape.py`.
 
 **i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text.
 

@@ -19,7 +19,8 @@ GROUP_URL = "https://climbmania.ch/fr/groups/1"
 # Name normalisation / deduplication
 # ---------------------------------------------------------------------------
 
-_NAME_MERGES_PATH = Path(__file__).parent / "public" / "name-merges.json"
+_ROOT = Path(__file__).resolve().parent.parent
+_NAME_MERGES_PATH = _ROOT / "public" / "name-merges.json"
 
 
 def _build_merge_map(path: Path) -> dict[str, str]:
@@ -314,7 +315,7 @@ def scrape(output: str, delay: float) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Climbmania event results.")
     parser.add_argument(
-        "--output", default="public/events.json", help="Output JSON file (default: public/events.json)"
+        "--output", default=str(_ROOT / "public" / "events.json"), help="Output JSON file (default: public/events.json)"
     )
     parser.add_argument(
         "--delay",
