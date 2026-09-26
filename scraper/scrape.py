@@ -7,7 +7,7 @@ import re
 import sys
 import time
 import unicodedata
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
@@ -254,7 +254,7 @@ def _parse_event_date(date_str: str) -> datetime | None:
         return None
 
 
-def scrape(output: str, delay: float) -> None:
+def scrape(output: str, delay: float, since: date | None) -> None:
     session = requests.Session()
 
     print(f"Fetching group page: {GROUP_URL}")
@@ -276,10 +276,22 @@ def scrape(output: str, delay: float) -> None:
     total = len(events_meta)
     print(f"Found {total} past events.\n")
 
+    previous: dict[int, dict] = {}
+    if since and Path(output).exists():
+        previous = {e["id"]: e for e in json.loads(Path(output).read_text(encoding="utf-8"))["events"]}
+
     events_out: list[dict] = []
 
     for i, meta in enumerate(events_meta, start=1):
         print(f"[{i}/{total}] Event {meta['id']} — {meta['title']}")
+
+        parsed = _parse_event_date(meta["date"])
+        if since and parsed is not None and parsed.date() < since:
+            if meta["id"] in previous:
+                events_out.append(previous[meta["id"]])
+                print(f"  Kept from {output} (before {since}).")
+            continue
+
         time.sleep(delay)
 
         results_soup = fetch(meta["url"], session)
@@ -328,8 +340,13 @@ def main() -> None:
         default=0.2,
         help="Seconds to wait between requests (default: 0.2)",
     )
+    parser.add_argument(
+        "--since",
+        type=date.fromisoformat,
+        help="Only scrape events on or after this date (YYYY-MM-DD); older events are kept from the existing output file",
+    )
     args = parser.parse_args()
-    scrape(args.output, args.delay)
+    scrape(args.output, args.delay, args.since)
 
 
 if __name__ == "__main__":

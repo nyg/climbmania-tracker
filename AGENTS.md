@@ -11,6 +11,7 @@ pnpm preview     # serve production build at http://localhost:4173
 # Python scraper (run separately to refresh data)
 ./scraper/scrape.sh                        # creates scraper/.venv, installs deps, writes public/events.json
 ./scraper/scrape.sh --output path/to/out.json --delay 0.5
+./scraper/scrape.sh --since 2026-01-01     # re-scrapes events from that date, keeps older ones from public/events.json
 ```
 
 No test runner or linter is configured.
