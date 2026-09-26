@@ -5,7 +5,7 @@ Climbmania events — event by event, with a block-level grid per result.
 
 ## How it works
 
-- Event data is pre-scraped (`scrape.py`) and bundled as `public/events.json`.
+- Event data is pre-scraped (`scraper/scrape.sh`) and bundled as `public/events.json`.
 - The app loads that JSON, lets you search for an athlete by name, and
   shows their rank, points, tops, and zones for every event they entered.
 - The interface is translated into French, German, Italian and English, and picks the
