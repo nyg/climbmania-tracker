@@ -4,70 +4,19 @@
 import argparse
 import json
 import re
+import shlex
 import sys
 import time
-import unicodedata
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
+from merge_names import EVENTS_PATH, apply_merges, find_candidates, load_merge_map, print_candidates
+
 GROUP_URL = "https://climbmania.ch/fr/groups/1"
 
-# ---------------------------------------------------------------------------
-# Name normalisation / deduplication
-# ---------------------------------------------------------------------------
-
-_ROOT = Path(__file__).resolve().parent.parent
-_NAME_MERGES_PATH = _ROOT / "public" / "name-merges.json"
-
-
-def _build_merge_map(path: Path) -> dict[str, str]:
-    """Return alias → canonical mapping loaded from name-merges.json.
-
-    The merge file is a JSON array of groups; the first element of each group
-    is the canonical name.  Lookup is case- and diacritic-insensitive.
-    """
-    if not path.exists():
-        return {}
-
-    def _norm(name: str) -> str:
-        n = name.lower().strip()
-        n = unicodedata.normalize("NFD", n)
-        n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-        n = re.sub(r"[^a-z ]", " ", n)
-        return re.sub(r"\s+", " ", n).strip()
-
-    with open(path, encoding="utf-8") as f:
-        groups = json.load(f)
-
-    alias_map: dict[str, str] = {}
-    for group in groups:
-        canonical = group[0]
-        for alias in group[1:]:
-            alias_map[_norm(alias)] = canonical
-        # Also map the canonical's own normalised form so it round-trips cleanly
-        alias_map[_norm(canonical)] = canonical
-    return alias_map
-
-
-_MERGE_MAP: dict[str, str] = _build_merge_map(_NAME_MERGES_PATH)
-
-
-def _normalise_name(name: str) -> str:
-    """Return the canonical name for *name*, or *name* unchanged if unknown."""
-    if not _MERGE_MAP:
-        return name
-
-    def _norm(n: str) -> str:
-        n = n.lower().strip()
-        n = unicodedata.normalize("NFD", n)
-        n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-        n = re.sub(r"[^a-z ]", " ", n)
-        return re.sub(r"\s+", " ", n).strip()
-
-    return _MERGE_MAP.get(_norm(name), name)
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -191,7 +140,7 @@ def parse_athlete_row(row) -> dict | None:
     raw_name = name_cell.get_text(separator="\n", strip=True)
     # Cell sometimes contains the name twice; take only the first occurrence
     parts = [p.strip() for p in raw_name.split("\n") if p.strip()]
-    name = _normalise_name(parts[0] if parts else raw_name.strip())
+    name = parts[0] if parts else raw_name.strip()
 
     # Points cell
     points = 0
@@ -317,6 +266,9 @@ def scrape(output: str, delay: float, since: date | None) -> None:
             }
         )
 
+    # Also renames athletes in events kept by --since, should name-merges.json have changed
+    apply_merges(events_out, load_merge_map())
+
     payload = {
         "scrapedAt": datetime.now(timezone.utc).isoformat(),
         "sourceUrl": GROUP_URL,
@@ -326,13 +278,16 @@ def scrape(output: str, delay: float, since: date | None) -> None:
     with open(output, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
 
-    print(f"\nWrote {len(events_out)} events to {output}")
+    print(f"\nWrote {len(events_out)} events to {output}\n")
+
+    events_arg = [] if Path(output).resolve() == EVENTS_PATH else ["--events", output]
+    print_candidates(find_candidates(events_out), shlex.join(["./scraper/merge_names.py", *events_arg, "--review"]))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Climbmania event results.")
     parser.add_argument(
-        "--output", default=str(_ROOT / "public" / "events.json"), help="Output JSON file (default: public/events.json)"
+        "--output", default=str(EVENTS_PATH), help="Output JSON file (default: public/events.json)"
     )
     parser.add_argument(
         "--delay",

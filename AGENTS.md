@@ -12,6 +12,10 @@ pnpm preview     # serve production build at http://localhost:4173
 ./scraper/scrape.sh                        # creates scraper/.venv, installs deps, writes public/events.json
 ./scraper/scrape.sh --output path/to/out.json --delay 0.5
 ./scraper/scrape.sh --since 2026-01-01     # re-scrapes events from that date, keeps older ones from public/events.json
+
+# Athlete name deduplication (stdlib only, no venv needed)
+./scraper/merge_names.py                   # applies public/name-merges.json to public/events.json, lists likely duplicate names
+./scraper/merge_names.py --review          # accept or reject each candidate interactively
 ```
 
 No test runner or linter is configured.
@@ -23,9 +27,10 @@ A single-page React 19 + Vite app. Data is pre-scraped offline by a Python scrip
 There is **no live scraping** and **no Vite proxy** — the old CORS workaround has been removed entirely.
 
 **Data pipeline:**
-1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones), skips athletes with 0 points and any category or event left without athletes, and writes everything to `public/events.json`. Applies name normalisation via `public/name-merges.json`.
+1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones), skips athletes with 0 points and any category or event left without athletes, and writes everything to `public/events.json`. Renames every athlete (including events kept by `--since`) to their canonical name from `public/name-merges.json`, then prints names that look like unmerged duplicates.
 2. `public/events.json` — static snapshot served alongside the app. Shape: `{ scrapedAt, sourceUrl, events: [{ id, title, date, url, categories: [{ name, athletes: [{ rank, name, points, tops, zones, totalBlocks }] }] }] }`. `tops` and `zones` are arrays of 1-based block numbers.
-3. `public/name-merges.json` — JSON array of name groups; first element is canonical. Used to deduplicate athletes who appear under slightly different spellings across events.
+3. `public/name-merges.json` — JSON array of name groups; first element is canonical. Used to deduplicate athletes who appear under slightly different spellings across events. Lookups ignore case, accents, punctuation and digits.
+4. `scraper/merge_names.py` — holds the merge logic imported by `scrape.py`, and is also a CLI. It finds candidate duplicates: names with the same words in any order (single words like `BasileRoch` are split at capitals), or with a `difflib` similarity ≥ 0.93. `--review` asks about each group: accepted ones are added to `name-merges.json` (extending an existing group when they overlap), rejected ones go to `public/name-distinct.json` so they are not suggested again. It then rewrites `events.json` with the new names, so no re-scrape is needed.
 
 **React data flow:**
 1. `App.jsx` — fetches `events.json` on mount, builds an autocomplete list of all athlete names, and runs `searchEvents()` (fuzzy token match or exact) on every query change. Computes summary stats (best tops/zones rate, best rank, best points) from results.
