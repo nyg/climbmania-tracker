@@ -12,6 +12,13 @@ pnpm preview     # serve production build at http://localhost:4173
 ./scraper/scrape.sh                        # creates scraper/.venv, installs deps, writes public/events.json
 ./scraper/scrape.sh --output path/to/out.json --delay 0.5
 ./scraper/scrape.sh --since 2026-01-01     # re-scrapes events from that date, keeps older ones from public/events.json
+
+# Analytics proxy (Cloudflare Worker, separate pnpm project)
+pnpm --dir worker install
+pnpm --dir worker run dev                  # run the Worker locally at http://localhost:8787
+pnpm --dir worker run deploy               # deploy to Cloudflare (needs `wrangler login` once)
+pnpm --dir worker run tail                 # stream production logs
+pnpm --dir worker exec wrangler secret put GOATCOUNTER_TOKEN
 ```
 
 No test runner or linter is configured.
@@ -32,6 +39,14 @@ There is **no live scraping** and **no Vite proxy** — the old CORS workaround 
 2. `EventCard.jsx` — renders a single event result card: event title, date, category, rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
 3. `components.jsx` — three pure display components: `BlockGrid` (coloured squares per block number), `ProgressBar`, `StatCard`.
 4. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
+
+**Analytics (GoatCounter via proxy):** EasyPrivacy blocks both `gc.zgo.at` and `goatcounter.com`, so neither is contacted from the browser.
+1. `public/count.js` — vendored, unmodified copy of GoatCounter's `count.v4.js`, served same-origin. To update it, re-download `https://gc.zgo.at/count.v4.js`.
+2. `index.html` — the `data-goatcounter` attribute points `count.js` at the Worker's `/hit` endpoint. `App.jsx` sends search events through the same path via `window.goatcounter.count()`.
+3. `worker/src/index.js` — Cloudflare Worker. Accepts only `POST /hit` with `Origin` equal to `ALLOWED_ORIGIN`, maps `count.js` query params (`p`, `t`, `r`, `q`, `e`, `b`, `s`) to a hit, adds the visitor's real IP (`CF-Connecting-IP`), `User-Agent` and language, and forwards it to GoatCounter's `POST /api/v0/count` in the background. Replies 204 straight away.
+4. `worker/wrangler.jsonc` — Worker name and the `ALLOWED_ORIGIN` / `GOATCOUNTER_URL` vars. The API token is the `GOATCOUNTER_TOKEN` secret, never committed; for local runs put it in `worker/.dev.vars`.
+
+Avoid names containing tracker keywords (`beacon`, `analytics`, `collect`, `goatcounter`, …) for the script file, Worker name, or endpoint path; generic blocklist rules match them.
 
 ## Key Conventions
 
