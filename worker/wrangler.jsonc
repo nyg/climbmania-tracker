@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "climbmania-tracker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-25",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nyg.github.io",
+    "GOATCOUNTER_URL": "https://climbmania-tracker.goatcounter.com"
+  }
+}
