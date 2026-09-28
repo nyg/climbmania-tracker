@@ -45,11 +45,11 @@ There is **no live scraping** and **no Vite proxy** — the old CORS workaround 
 3. `components.jsx` — three pure display components: `BlockGrid` (coloured squares per block number), `ProgressBar`, `StatCard`.
 4. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
 
-**Analytics (GoatCounter via proxy):** EasyPrivacy blocks both `gc.zgo.at` and `goatcounter.com`, so neither is contacted from the browser.
+**Analytics (GoatCounter via proxy):** EasyPrivacy blocks both `gc.zgo.at` and `goatcounter.com`, so neither is contacted from the browser. It also blocks every third-party `navigator.sendBeacon` request (`*$ping,third-party`), so hits are sent with `fetch` instead.
 1. `public/count.js` — vendored, unmodified copy of GoatCounter's `count.v4.js`, served same-origin. To update it, re-download `https://gc.zgo.at/count.v4.js`.
-2. `index.html` — the `data-goatcounter` attribute points `count.js` at the Worker's `/hit` endpoint. `App.jsx` sends search events through the same path via `window.goatcounter.count()`.
+2. `index.html` — an inline script, which must stay before the `count.js` tag, replaces `navigator.sendBeacon` with a `fetch` POST (`keepalive`, `no-cors`), which blockers see as `xmlhttprequest` rather than `ping`. The `data-goatcounter` attribute points `count.js` at the Worker's `/hit` endpoint. `App.jsx` sends search events through the same path via `window.goatcounter.count()`, with the raw query as the event path (`/search/<query>`).
 3. `worker/src/index.js` — Cloudflare Worker. Accepts only `POST /hit` with `Origin` equal to `ALLOWED_ORIGIN`, maps `count.js` query params (`p`, `t`, `r`, `q`, `e`, `b`, `s`) to a hit, adds the visitor's real IP (`CF-Connecting-IP`), `User-Agent` and language, and forwards it to GoatCounter's `POST /api/v0/count` in the background. Replies 204 straight away.
-4. `worker/wrangler.jsonc` — Worker name and the `ALLOWED_ORIGIN` / `GOATCOUNTER_URL` vars. The API token is the `GOATCOUNTER_TOKEN` secret, never committed; for local runs put it in `worker/.dev.vars`.
+4. `worker/wrangler.jsonc` — Worker name and the `ALLOWED_ORIGIN` / `GOATCOUNTER_URL` vars. Workers Logs are enabled, so failed forwards logged by the Worker can be searched in the Cloudflare dashboard after the fact. The API token is the `GOATCOUNTER_TOKEN` secret, never committed; for local runs put it in `worker/.dev.vars`.
 
 Avoid names containing tracker keywords (`beacon`, `analytics`, `collect`, `goatcounter`, …) for the script file, Worker name, or endpoint path; generic blocklist rules match them.
 

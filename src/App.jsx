@@ -145,7 +145,7 @@ export default function App() {
   useEffect(() => {
     if (!searchQuery) return;
     window.goatcounter?.count({
-      path: `/search/${encodeURIComponent(searchQuery)}`,
+      path: `/search/${searchQuery}`,
       title: searchQuery,
       event: true,
     });

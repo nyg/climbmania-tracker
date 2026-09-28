@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Climbmania Tracker</title>
+    <script>
+      if (window.fetch) navigator.sendBeacon = function (url) {
+        fetch(url, { method: 'POST', keepalive: true, mode: 'no-cors' }).catch(function () {})
+        return true
+      }
+    </script>
     <script data-goatcounter="https://climbmania-tracker.cloudflare-mmdif.workers.dev/hit"
             async src="%BASE_URL%count.js"></script>
   </head>
