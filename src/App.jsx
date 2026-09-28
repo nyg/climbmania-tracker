@@ -386,7 +386,7 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, fontSize: 11, color: 'var(--text-faint)' }}>
           {profiledAthletes.map(a => (
             <div key={`profiles-${a.name}`} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px' }}>
-              {t('profilesOf', { name: a.name })}
+              {t('profilesOf', { name: a.name, count: profileMap.get(a.name).length })}
               {profileMap.get(a.name).map(([site, id]) => (
                 <a
                   key={site}
