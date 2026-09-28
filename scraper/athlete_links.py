@@ -13,7 +13,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
-from merge_names import EVENTS_PATH, load_merge_map, match_key, name_key
+from merge_names import EVENTS_PATH, athlete_name, load_merge_map, match_key, name_key
 
 _ROOT = Path(__file__).resolve().parent.parent
 LINKS_PATH = _ROOT / "public" / "athlete-links.json"
@@ -56,7 +56,7 @@ def collect_adult_athletes(events: list[dict], merge_map: dict[str, str]) -> dic
     for event in events:
         for category in event["categories"]:
             for result in category["athletes"]:
-                name = merge_map.get(name_key(result["name"]), result["name"])
+                name = athlete_name(result, merge_map)
                 athlete = athletes[name]
                 athlete["names"].update(filter(None, [name, result["name"], result.get("fullName")]))
                 athlete["categories"].add(category["name"])

@@ -33,6 +33,26 @@ function nameKey(name) {
   return foldName(name).replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function matchWords(name) {
+  const spaced = name.trim().includes(' ') ? name : name.replace(/(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])/g, ' ');
+  return nameKey(spaced).split(' ').filter(Boolean);
+}
+
+function completes(fullName, name) {
+  const words = matchWords(name);
+  const fullWords = matchWords(fullName);
+  const singleWord = name.replace(/,/g, ' ').trim().split(/\s+/).length === 1;
+  const abbreviated = words.some(word => !fullWords.includes(word));
+  return fullWords.length > 1
+    && words.every(word => fullWords.some(fullWord => fullWord.startsWith(word)))
+    && (singleWord || abbreviated);
+}
+
+function athleteName(athlete, mergeMap) {
+  const name = athlete.fullName && completes(athlete.fullName, athlete.name) ? athlete.fullName : athlete.name;
+  return mergeMap.get(nameKey(name)) ?? name;
+}
+
 function buildMergeMap(groups) {
   const mergeMap = new Map();
   for (const [canonical, ...aliases] of groups) {
@@ -57,7 +77,7 @@ function flattenResults(events, mergeMap) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
         results.push({
-          athleteName: mergeMap.get(nameKey(athlete.name)) ?? athlete.name,
+          athleteName: athleteName(athlete, mergeMap),
           listedAs: athlete.name,
           eventId: event.id,
           eventTitle: event.title,
