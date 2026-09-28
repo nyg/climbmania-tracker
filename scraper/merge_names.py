@@ -4,8 +4,9 @@
 events.json keeps each name as listed on Climbmania; the app shows every name
 of a merge group in name-merges.json as one athlete.  This script lists names
 that are not merged yet: the same words in another order, case, punctuation or
-accentuation, spellings a typo apart, or results whose athletes gave the same
-first and last name.  With --review, each candidate group is shown for a
+accentuation, spellings a typo apart, results whose athletes gave the same
+first and last name, or a short name like "Jil" whose full name "Jil Couture"
+completes it.  With --review, each candidate group is shown for a
 decision; accepted groups go to name-merges.json, and groups rejected as
 different people go to name-distinct.json so they are not suggested again.
 
@@ -35,6 +36,7 @@ SIMILARITY_THRESHOLD = 0.93
 SAME_WORDS = "same words"
 SAME_FULL_NAME = "same full name"
 SIMILAR_SPELLING = "similar spelling"
+COMPLETED_BY_FULL_NAME = "completed by full name"
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +108,18 @@ def _is_tidy(name: str) -> bool:
     return len(words) > 1 and all(w[:1].isupper() and re.sub(r"[-']", "", w).isalpha() for w in words)
 
 
+def _completes(full_name: str, name: str) -> bool:
+    words = match_key(name).split()
+    full_words = match_key(full_name).split()
+    single_word = len(name.replace(",", " ").split()) == 1
+    abbreviated = any(word not in full_words for word in words)
+    return (
+        len(full_words) > 1
+        and all(any(full_word.startswith(word) for full_word in full_words) for word in words)
+        and (single_word or abbreviated)
+    )
+
+
 def _similar_keys(keys: list[str]) -> list[tuple[str, str, float]]:
     """Return (key, key, ratio) for pairs of distinct keys at least SIMILARITY_THRESHOLD alike.
 
@@ -151,16 +165,19 @@ def find_candidates(
     name comes first: the canonical of an existing merge group if the candidate
     extends one, else the most frequent name.  The reasons say what links the
     group: the same words, the same full name (the first and last name given
-    next to the name), or a similar spelling; each score is the lowest
-    similarity linking the group that way.
+    next to the name), a similar spelling, or a full name that completes the
+    name (suggested as the canonical name, with no results of its own); each
+    score is the lowest similarity linking the group that way.
     Pairs listed together in name-distinct.json are never suggested.
     """
     counts: Counter[str] = Counter()
     names_by_full_name: dict[str, set[str]] = defaultdict(set)
+    full_names_by_name: dict[str, Counter[str]] = defaultdict(Counter)
     for name, _, full_name in _canonical_results(events, load_merge_map(merges_path)):
         counts[name] += 1
         if full_name:
             names_by_full_name[match_key(full_name)].add(name)
+            full_names_by_name[name][full_name] += 1
 
     distinct = {frozenset((a, b)) for group in load_groups(distinct_path) for a in group for b in group if a != b}
 
@@ -175,8 +192,15 @@ def find_candidates(
         linked = sorted(names.union(names_by_key.get(key, [])))
         edges += [(a, b, SAME_FULL_NAME, 1.0) for a, b in combinations(linked, 2)]
 
+    completions = {}
+    for name, full_names in full_names_by_name.items():
+        full_name = full_names.most_common(1)[0][0]
+        if match_key(full_name) not in names_by_key and _completes(full_name, name):
+            completions[name] = full_name
+    edges += [(name, full_name, COMPLETED_BY_FULL_NAME, 1.0) for name, full_name in completions.items()]
+
     # Union-find over the edges that are not known to link different people
-    parent = {name: name for name in counts}
+    parent = {name: name for name in [*counts, *completions.values()]}
 
     def root(name: str) -> str:
         while parent[name] != name:
@@ -199,7 +223,7 @@ def find_candidates(
         reasons[rb] = joined
 
     components: dict[str, list[str]] = defaultdict(list)
-    for name in counts:
+    for name in parent:
         components[root(name)].append(name)
 
     canonicals = {group[0] for group in load_groups(merges_path)}
@@ -207,7 +231,7 @@ def find_candidates(
     for r, names in components.items():
         if len(names) < 2:
             continue
-        names.sort(key=lambda n: (n not in canonicals, -counts[n], not _is_tidy(n), n.casefold()))
+        names.sort(key=lambda n: (n not in canonicals, counts[n] > 0, -counts[n], not _is_tidy(n), n.casefold()))
         candidates.append({"names": names, "counts": [counts[n] for n in names], "reasons": reasons[r]})
     return sorted(candidates, key=lambda c: c["names"][0].casefold())
 
@@ -223,7 +247,7 @@ def print_candidates(candidates: list[dict], review_cmd: str) -> None:
         return
     print(f"{len(candidates)} possible duplicate athlete names not in name-merges.json:")
     for candidate in candidates:
-        names = " = ".join(f"{n} ({count}×)" for n, count in zip(candidate["names"], candidate["counts"]))
+        names = " = ".join(f"{n} ({count}×)" if count else f"{n} (full name)" for n, count in zip(candidate["names"], candidate["counts"]))
         print(f"  {names}  [{describe_reasons(candidate['reasons'])}]")
     print(f"Review them with: {review_cmd}")
 
@@ -274,7 +298,7 @@ def review(candidates: list[dict], events: list[dict], merges_path: Path, distin
             cats = sorted(categories[name])
             shown = ", ".join(cats[:2]) + (", …" if len(cats) > 2 else "")
             given = f" · full name: {', '.join(sorted(full_names[name]))}" if full_names[name] else ""
-            print(f"  {n}) {name}  — {count}× · {shown}{given}")
+            print(f"  {n}) {name}  — {f'{count}× · {shown}{given}' if count else 'full name only, no results'}")
 
         valid = {"y", "n", "s", "q", ""} | {str(n) for n in range(1, len(names) + 1)}
         answer = None
