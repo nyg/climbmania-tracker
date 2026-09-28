@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from merge_names import EVENTS_PATH, apply_merges, find_candidates, load_merge_map, print_candidates
+from merge_names import EVENTS_PATH, find_candidates, print_candidates
 
 GROUP_URL = "https://climbmania.ch/fr/groups/1"
 
@@ -137,10 +137,8 @@ def parse_athlete_row(row) -> dict | None:
 
     # Name cell
     name_cell = cells[1]
-    raw_name = name_cell.get_text(separator="\n", strip=True)
-    # Cell sometimes contains the name twice; take only the first occurrence
-    parts = [p.strip() for p in raw_name.split("\n") if p.strip()]
-    name = parts[0] if parts else raw_name.strip()
+    name = _cell_text(name_cell.find("b") or name_cell)
+    full_name = _cell_text(name_cell.find("small"))
 
     # Points cell
     points = 0
@@ -153,7 +151,7 @@ def parse_athlete_row(row) -> dict | None:
     # Block grid cell (4th column)
     tops, zones, total_blocks = parse_blocks(cells[3] if len(cells) > 3 else None)
 
-    return {
+    athlete = {
         "rank": rank,
         "name": name,
         "points": points,
@@ -161,6 +159,13 @@ def parse_athlete_row(row) -> dict | None:
         "zones": zones,
         "totalBlocks": total_blocks,
     }
+    if full_name and full_name != name:
+        athlete["fullName"] = full_name
+    return athlete
+
+
+def _cell_text(tag) -> str:
+    return " ".join(tag.get_text(" ").split()) if tag else ""
 
 
 def parse_results_page(soup: BeautifulSoup) -> list[dict]:
@@ -265,9 +270,6 @@ def scrape(output: str, delay: float, since: date | None) -> None:
                 "categories": categories,
             }
         )
-
-    # Also renames athletes in events kept by --since, should name-merges.json have changed
-    apply_merges(events_out, load_merge_map())
 
     payload = {
         "scrapedAt": datetime.now(timezone.utc).isoformat(),

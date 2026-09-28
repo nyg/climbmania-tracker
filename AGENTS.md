@@ -14,7 +14,7 @@ pnpm preview     # serve production build at http://localhost:4173
 ./scraper/scrape.sh --since 2026-01-01     # re-scrapes events from that date, keeps older ones from public/events.json
 
 # Athlete name deduplication (stdlib only, no venv needed)
-./scraper/merge_names.py                   # applies public/name-merges.json to public/events.json, lists likely duplicate names
+./scraper/merge_names.py                   # lists likely duplicate athlete names not yet in public/name-merges.json
 ./scraper/merge_names.py --review          # accept or reject each candidate interactively
 
 # Analytics proxy (Cloudflare Worker, separate pnpm project)
@@ -34,14 +34,14 @@ A single-page React 19 + Vite app. Data is pre-scraped offline by a Python scrip
 There is **no live scraping** and **no Vite proxy** — the old CORS workaround has been removed entirely.
 
 **Data pipeline:**
-1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, points, block tops/zones), skips athletes with 0 points and any category or event left without athletes, and writes everything to `public/events.json`. Renames every athlete (including events kept by `--since`) to their canonical name from `public/name-merges.json`, then prints names that look like unmerged duplicates.
-2. `public/events.json` — static snapshot served alongside the app. Shape: `{ scrapedAt, sourceUrl, events: [{ id, title, date, url, categories: [{ name, athletes: [{ rank, name, points, tops, zones, totalBlocks }] }] }] }`. `tops` and `zones` are arrays of 1-based block numbers.
-3. `public/name-merges.json` — JSON array of name groups; first element is canonical. Used to deduplicate athletes who appear under slightly different spellings across events. Lookups ignore case, accents, punctuation and digits.
-4. `scraper/merge_names.py` — holds the merge logic imported by `scrape.py`, and is also a CLI. It finds candidate duplicates: names with the same words in any order (single words like `BasileRoch` are split at capitals), or with a `difflib` similarity ≥ 0.93. `--review` asks about each group: accepted ones are added to `name-merges.json` (extending an existing group when they overlap), rejected ones go to `public/name-distinct.json` so they are not suggested again. It then rewrites `events.json` with the new names, so no re-scrape is needed.
+1. `scraper/scrape.py` — fetches the Climbmania group page to discover all past events, then scrapes each event's results page. Parses categories and athletes (rank, name, full name, points, block tops/zones), skips athletes with 0 points and any category or event left without athletes, and writes everything to `public/events.json`. Names are kept as listed on Climbmania. It then prints names that look like unmerged duplicates.
+2. `public/events.json` — static snapshot served alongside the app. Shape: `{ scrapedAt, sourceUrl, events: [{ id, title, date, url, categories: [{ name, athletes: [{ rank, name, fullName?, points, tops, zones, totalBlocks }] }] }] }`. `name` is the bold name the athlete entered (meant to be "Surname, First name", but often a nickname or another format). `fullName` is the first and last name shown under it, present only when the athlete filled it in and it differs from `name`. `tops` and `zones` are arrays of 1-based block numbers.
+3. `public/name-merges.json` — JSON array of name groups; first element is canonical. The app loads it with `events.json` and shows every name of a group as one athlete under the canonical name. Lookups ignore case, accents, punctuation and digits.
+4. `scraper/merge_names.py` — holds the duplicate detection imported by `scrape.py`, and is also a CLI. It finds candidate duplicates: names with the same words in any order (single words like `BasileRoch` are split at capitals), names whose results share a `fullName` (or whose `fullName` has the same words as another name), or names with a `difflib` similarity ≥ 0.93. `--review` asks about each group: accepted ones are added to `name-merges.json` (extending an existing group when they overlap), rejected ones go to `public/name-distinct.json` so they are not suggested again. `events.json` is never rewritten, so no re-scrape is needed.
 
 **React data flow:**
-1. `App.jsx` — fetches `events.json` on mount, builds an autocomplete list of all athlete names, and runs `searchEvents()` (fuzzy token match or exact) on every query change. Computes summary stats (best tops/zones rate, best rank, best points) from results.
-2. `EventCard.jsx` — renders a single event result card: event title, date, category, rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
+1. `App.jsx` — fetches `events.json` and `name-merges.json` on mount and maps each result to its athlete's canonical name. The autocomplete shows one line per athlete with their other names ("a.k.a."); a query matches any of those names, ignoring case and accents. Computes summary stats (best tops/zones rate, best rank, best points) from results, and lists the merged names under them.
+2. `EventCard.jsx` — renders a single event result card: event title, date, category, the name the result was listed under when it differs from the canonical one, rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
 3. `components.jsx` — three pure display components: `BlockGrid` (coloured squares per block number), `ProgressBar`, `StatCard`.
 4. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
 

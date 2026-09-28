@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Keep athlete names in events.json in line with name-merges.json.
+"""Find athlete names in events.json that probably belong to the same athlete.
 
-Renames every athlete in events.json to the canonical name of their merge
-group, then lists names that probably belong to the same athlete but are not
-merged yet: the same words in another order, case, punctuation or accentuation,
-or spellings a typo apart.  With --review, each candidate group is shown for a
+events.json keeps each name as listed on Climbmania; the app shows every name
+of a merge group in name-merges.json as one athlete.  This script lists names
+that are not merged yet: the same words in another order, case, punctuation or
+accentuation, spellings a typo apart, or results whose athletes gave the same
+first and last name.  With --review, each candidate group is shown for a
 decision; accepted groups go to name-merges.json, and groups rejected as
 different people go to name-distinct.json so they are not suggested again.
 
@@ -18,7 +19,9 @@ import shlex
 import sys
 import unicodedata
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from difflib import SequenceMatcher
+from itertools import combinations
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +31,10 @@ DISTINCT_PATH = _ROOT / "public" / "name-distinct.json"
 
 # Minimum difflib ratio for two differently spelled names to be suggested
 SIMILARITY_THRESHOLD = 0.93
+
+SAME_WORDS = "same words"
+SAME_FULL_NAME = "same full name"
+SIMILAR_SPELLING = "similar spelling"
 
 
 # ---------------------------------------------------------------------------
@@ -70,17 +77,12 @@ def load_merge_map(path: Path = MERGES_PATH) -> dict[str, str]:
     return merge_map
 
 
-def apply_merges(events: list[dict], merge_map: dict[str, str]) -> int:
-    """Rename athletes in *events* to their canonical name; return how many were renamed."""
-    renamed = 0
+def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterator[tuple[str, str, str | None]]:
     for event in events:
         for category in event["categories"]:
             for athlete in category["athletes"]:
-                canonical = merge_map.get(name_key(athlete["name"]), athlete["name"])
-                if canonical != athlete["name"]:
-                    athlete["name"] = canonical
-                    renamed += 1
-    return renamed
+                name = merge_map.get(name_key(athlete["name"]), athlete["name"])
+                yield name, category["name"], athlete.get("fullName")
 
 
 # ---------------------------------------------------------------------------
@@ -143,14 +145,22 @@ def find_candidates(
 ) -> list[dict]:
     """Return groups of names in *events* that probably belong to one athlete.
 
-    Each candidate is {"names": [...], "counts": [...], "score": float}, where
+    Names already in a merge group count as its canonical name.  Each candidate
+    is {"names": [...], "counts": [...], "reasons": {reason: score}}, where
     counts are the number of results per name.  The suggested canonical
     name comes first: the canonical of an existing merge group if the candidate
-    extends one, else the most frequent name.  The score is the lowest
-    similarity linking the group, 1.0 when all names have the same words.
+    extends one, else the most frequent name.  The reasons say what links the
+    group: the same words, the same full name (the first and last name given
+    next to the name), or a similar spelling; each score is the lowest
+    similarity linking the group that way.
     Pairs listed together in name-distinct.json are never suggested.
     """
-    counts = Counter(a["name"] for e in events for c in e["categories"] for a in c["athletes"])
+    counts: Counter[str] = Counter()
+    names_by_full_name: dict[str, set[str]] = defaultdict(set)
+    for name, _, full_name in _canonical_results(events, load_merge_map(merges_path)):
+        counts[name] += 1
+        if full_name:
+            names_by_full_name[_match_key(full_name)].add(name)
 
     distinct = {frozenset((a, b)) for group in load_groups(distinct_path) for a in group for b in group if a != b}
 
@@ -158,9 +168,12 @@ def find_candidates(
     for name in counts:
         names_by_key[_match_key(name)].append(name)
 
-    edges = [(a, b, 1.0) for names in names_by_key.values() for i, a in enumerate(names) for b in names[i + 1 :]]
+    edges = [(a, b, SAME_WORDS, 1.0) for names in names_by_key.values() for a, b in combinations(names, 2)]
     for key_a, key_b, ratio in _similar_keys(list(names_by_key)):
-        edges += [(a, b, ratio) for a in names_by_key[key_a] for b in names_by_key[key_b]]
+        edges += [(a, b, SIMILAR_SPELLING, ratio) for a in names_by_key[key_a] for b in names_by_key[key_b]]
+    for key, names in names_by_full_name.items():
+        linked = sorted(names.union(names_by_key.get(key, [])))
+        edges += [(a, b, SAME_FULL_NAME, 1.0) for a, b in combinations(linked, 2)]
 
     # Union-find over the edges that are not known to link different people
     parent = {name: name for name in counts}
@@ -171,15 +184,19 @@ def find_candidates(
             name = parent[name]
         return name
 
-    score: dict[str, float] = {}
-    for a, b, ratio in edges:
+    reasons: dict[str, dict[str, float]] = {}
+    for a, b, reason, ratio in edges:
         if frozenset((a, b)) in distinct:
             continue
         ra, rb = root(a), root(b)
         if ra == rb:
             continue
         parent[ra] = rb
-        score[rb] = min(ratio, score.get(ra, 1.0), score.get(rb, 1.0))
+        joined = reasons.pop(ra, {})
+        for known, score in reasons.get(rb, {}).items():
+            joined[known] = min(score, joined.get(known, 1.0))
+        joined[reason] = min(ratio, joined.get(reason, 1.0))
+        reasons[rb] = joined
 
     components: dict[str, list[str]] = defaultdict(list)
     for name in counts:
@@ -191,8 +208,12 @@ def find_candidates(
         if len(names) < 2:
             continue
         names.sort(key=lambda n: (n not in canonicals, -counts[n], not _is_tidy(n), n.casefold()))
-        candidates.append({"names": names, "counts": [counts[n] for n in names], "score": score[r]})
+        candidates.append({"names": names, "counts": [counts[n] for n in names], "reasons": reasons[r]})
     return sorted(candidates, key=lambda c: c["names"][0].casefold())
+
+
+def describe_reasons(reasons: dict[str, float]) -> str:
+    return ", ".join(reason if score == 1.0 else f"{reason} {score:.2f}" for reason, score in sorted(reasons.items()))
 
 
 def print_candidates(candidates: list[dict], review_cmd: str) -> None:
@@ -203,8 +224,7 @@ def print_candidates(candidates: list[dict], review_cmd: str) -> None:
     print(f"{len(candidates)} possible duplicate athlete names not in name-merges.json:")
     for candidate in candidates:
         names = " = ".join(f"{n} ({count}×)" for n, count in zip(candidate["names"], candidate["counts"]))
-        similarity = "" if candidate["score"] == 1.0 else f"  [similarity {candidate['score']:.2f}]"
-        print(f"  {names}{similarity}")
+        print(f"  {names}  [{describe_reasons(candidate['reasons'])}]")
     print(f"Review them with: {review_cmd}")
 
 
@@ -227,13 +247,14 @@ def _merge_group(groups: list[list[str]], names: list[str], canonical: str) -> l
     return kept + [list(dict.fromkeys(merged))]
 
 
-def review(candidates: list[dict], events: list[dict], merges_path: Path, distinct_path: Path) -> bool:
-    """Ask about each candidate group and save the decisions; return True if any merge was added."""
+def review(candidates: list[dict], events: list[dict], merges_path: Path, distinct_path: Path) -> None:
+    """Ask about each candidate group and save the decisions."""
     categories: dict[str, set[str]] = defaultdict(set)
-    for event in events:
-        for category in event["categories"]:
-            for athlete in category["athletes"]:
-                categories[athlete["name"]].add(category["name"])
+    full_names: dict[str, set[str]] = defaultdict(set)
+    for name, category, full_name in _canonical_results(events, load_merge_map(merges_path)):
+        categories[name].add(category)
+        if full_name:
+            full_names[name].add(full_name)
 
     merges = load_groups(merges_path)
     distinct = load_groups(distinct_path)
@@ -248,12 +269,12 @@ def review(candidates: list[dict], events: list[dict], merges_path: Path, distin
 
     for i, candidate in enumerate(candidates, start=1):
         names = candidate["names"]
-        kind = "same words" if candidate["score"] == 1.0 else f"similar spelling, {candidate['score']:.2f}"
-        print(f"\n[{i}/{len(candidates)}] Same athlete? ({kind})")
+        print(f"\n[{i}/{len(candidates)}] Same athlete? ({describe_reasons(candidate['reasons'])})")
         for n, (name, count) in enumerate(zip(names, candidate["counts"]), start=1):
             cats = sorted(categories[name])
             shown = ", ".join(cats[:2]) + (", …" if len(cats) > 2 else "")
-            print(f"  {n}) {name}  — {count}× · {shown}")
+            given = f" · full name: {', '.join(sorted(full_names[name]))}" if full_names[name] else ""
+            print(f"  {n}) {name}  — {count}× · {shown}{given}")
 
         valid = {"y", "n", "s", "q", ""} | {str(n) for n in range(1, len(names) + 1)}
         answer = None
@@ -279,7 +300,6 @@ def review(candidates: list[dict], events: list[dict], merges_path: Path, distin
     if rejected:
         save_groups(distinct_path, distinct)
     print(f"\nMerged {merged} group(s) into {merges_path.name}, marked {rejected} as different people.")
-    return merged > 0
 
 
 # ---------------------------------------------------------------------------
@@ -288,31 +308,22 @@ def review(candidates: list[dict], events: list[dict], merges_path: Path, distin
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Apply name-merges.json to events.json and find duplicate names.")
+    parser = argparse.ArgumentParser(description="Find athlete names in events.json that probably belong to one athlete.")
     parser.add_argument(
         "--events", default=str(EVENTS_PATH), help="Scraped events JSON file (default: public/events.json)"
     )
     parser.add_argument("--review", action="store_true", help="Decide on each candidate group interactively")
     args = parser.parse_args()
 
-    events_path = Path(args.events)
-    payload = json.loads(events_path.read_text(encoding="utf-8"))
-    events = payload["events"]
-
-    renamed = apply_merges(events, load_merge_map())
+    events = json.loads(Path(args.events).read_text(encoding="utf-8"))["events"]
     candidates = find_candidates(events)
 
-    if args.review:
-        if not candidates:
-            print("No new duplicate athlete names found.")
-        elif review(candidates, events, MERGES_PATH, DISTINCT_PATH):
-            renamed += apply_merges(events, load_merge_map())
-    else:
+    if not args.review:
         print_candidates(candidates, shlex.join(["./scraper/merge_names.py", *sys.argv[1:], "--review"]))
-
-    if renamed:
-        events_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        print(f"Renamed {renamed} athlete results in {events_path}.")
+    elif not candidates:
+        print("No new duplicate athlete names found.")
+    else:
+        review(candidates, events, MERGES_PATH, DISTINCT_PATH)
 
 
 if __name__ == "__main__":

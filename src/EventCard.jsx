@@ -35,7 +35,7 @@ function scorePct(tops, zones, totalBlocks) {
 export default function EventCard({ result, prevResult }) {
   const { t, i18n } = useTranslation();
   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
-  const { eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes } = result;
+  const { athleteName, listedAs, eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes } = result;
   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
@@ -75,6 +75,9 @@ export default function EventCard({ result, prevResult }) {
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
+          {listedAs !== athleteName && (
+            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 2 }}>{t('listedAs', { name: listedAs })}</div>
+          )}
         </div>
       </div>
 

@@ -21,32 +21,42 @@ function getInitialTheme() {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
-function searchEvents(events, query, exact = false) {
-  const q = query.trim().toLowerCase();
-  const tokens = q.split(/\s+/).filter(Boolean);
-  const results = [];
+function foldName(name) {
+  return name.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '');
+}
 
+function nameKey(name) {
+  return foldName(name).replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function buildMergeMap(groups) {
+  const mergeMap = new Map();
+  for (const [canonical, ...aliases] of groups) {
+    for (const alias of aliases) mergeMap.set(nameKey(alias), canonical);
+    mergeMap.set(nameKey(canonical), canonical);
+  }
+  return mergeMap;
+}
+
+function flattenResults(events, mergeMap) {
+  const results = [];
   for (const event of events) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
-        const lower = athlete.name.toLowerCase();
-        const match = exact
-          ? lower === q
-          : tokens.every(tok => lower.includes(tok));
-        if (match) {
-          results.push({
-            eventId: event.id,
-            eventTitle: event.title,
-            eventDate: event.date,
-            category: category.name,
-            rank: athlete.rank,
-            points: athlete.points,
-            tops: athlete.tops,
-            zones: athlete.zones,
-            totalBlocks: athlete.totalBlocks,
-            totalAthletes: category.athletes.length,
-          });
-        }
+        results.push({
+          athleteName: mergeMap.get(nameKey(athlete.name)) ?? athlete.name,
+          listedAs: athlete.name,
+          eventId: event.id,
+          eventTitle: event.title,
+          eventDate: event.date,
+          category: category.name,
+          rank: athlete.rank,
+          points: athlete.points,
+          tops: athlete.tops,
+          zones: athlete.zones,
+          totalBlocks: athlete.totalBlocks,
+          totalAthletes: category.athletes.length,
+        });
       }
     }
   }
@@ -57,11 +67,32 @@ function searchEvents(events, query, exact = false) {
   });
 }
 
+function listAthletes(results) {
+  const aliasesByName = new Map();
+  for (const { athleteName, listedAs } of results) {
+    if (!aliasesByName.has(athleteName)) aliasesByName.set(athleteName, new Set());
+    if (listedAs !== athleteName) aliasesByName.get(athleteName).add(listedAs);
+  }
+  return [...aliasesByName]
+    .map(([name, aliases]) => {
+      const sortedAliases = [...aliases].sort((a, b) => a.localeCompare(b));
+      return { name, aliases: sortedAliases, searchForms: [name, ...sortedAliases].map(foldName) };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function matchAthletes(athletes, query) {
+  const tokens = foldName(query.trim()).split(/\s+/).filter(Boolean);
+  if (!tokens.length) return [];
+  return athletes.filter(a => a.searchForms.some(form => tokens.every(tok => form.includes(tok))));
+}
+
 export default function App() {
   const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
+  const [mergeGroups, setMergeGroups] = useState([]);
   const [loadErr, setLoadErr]         = useState(null);
   const [name, setName]               = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,33 +109,21 @@ export default function App() {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}events.json`)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(setData)
+    const load = file => fetch(`${import.meta.env.BASE_URL}${file}`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+    Promise.all([load('events.json'), load('name-merges.json')])
+      .then(([events, merges]) => { setMergeGroups(merges); setData(events); })
       .catch(e => setLoadErr(e.message));
   }, []);
 
-  const allAthleteNames = useMemo(() => {
-    if (!data) return [];
-    const names = new Set();
-    for (const event of data.events ?? []) {
-      for (const category of event.categories ?? []) {
-        for (const athlete of category.athletes ?? []) {
-          names.add(athlete.name);
-        }
-      }
-    }
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [data]);
+  const allResults = useMemo(
+    () => data ? flattenResults(data.events ?? [], buildMergeMap(mergeGroups)) : [],
+    [data, mergeGroups],
+  );
 
-  const suggestions = useMemo(() => {
-    const tokens = name.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (!tokens.length) return [];
-    return allAthleteNames.filter(n => {
-      const lower = n.toLowerCase();
-      return tokens.every(tok => lower.includes(tok));
-    });
-  }, [name, allAthleteNames]);
+  const athletes = useMemo(() => listAthletes(allResults), [allResults]);
+
+  const suggestions = useMemo(() => matchAthletes(athletes, name), [name, athletes]);
 
   useEffect(() => { setFocusedIndex(-1); }, [suggestions]);
 
@@ -132,10 +151,18 @@ export default function App() {
     });
   }, [searchQuery]);
 
+  const searchedAthletes = useMemo(() => {
+    if (!searchQuery) return [];
+    if (exactSearch) return athletes.filter(a => a.name === searchQuery);
+    return matchAthletes(athletes, searchQuery);
+  }, [athletes, searchQuery, exactSearch]);
+
   const results = useMemo(() => {
-    if (!data || !searchQuery) return [];
-    return searchEvents(data.events ?? [], searchQuery, exactSearch);
-  }, [data, searchQuery, exactSearch]);
+    const names = new Set(searchedAthletes.map(a => a.name));
+    return allResults.filter(r => names.has(r.athleteName));
+  }, [allResults, searchedAthletes]);
+
+  const mergedAthletes = searchedAthletes.filter(a => a.aliases.length > 0);
 
   const bestTopsResult = results.length ? results.reduce((best, r) => {
     const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks;
@@ -187,7 +214,7 @@ export default function App() {
                     setFocusedIndex(i => Math.max(i - 1, -1));
                   } else if (e.key === 'Enter') {
                     if (focusedIndex >= 0 && suggestions[focusedIndex]) {
-                      handleSelect(suggestions[focusedIndex]);
+                      handleSelect(suggestions[focusedIndex].name);
                     } else {
                       handleSearch();
                     }
@@ -213,19 +240,24 @@ export default function App() {
                 }}>
                   {suggestions.map((s, idx) => (
                     <div
-                      key={s}
-                      onMouseDown={() => handleSelect(s)}
-                      onMouseEnter={() => setHoveredSuggestion(s)}
+                      key={s.name}
+                      onMouseDown={() => handleSelect(s.name)}
+                      onMouseEnter={() => setHoveredSuggestion(s.name)}
                       onMouseLeave={() => setHoveredSuggestion(null)}
                       style={{
                         padding: '9px 14px',
                         fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)',
                         cursor: 'pointer', letterSpacing: 0,
-                        background: (hoveredSuggestion === s || focusedIndex === idx) ? 'var(--bg-suggestion-hover)' : 'transparent',
+                        background: (hoveredSuggestion === s.name || focusedIndex === idx) ? 'var(--bg-suggestion-hover)' : 'transparent',
                         borderBottom: '1px solid var(--border)',
                       }}
                     >
-                      {s}
+                      {s.name}
+                      {s.aliases.length > 0 && (
+                        <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-faint)', marginLeft: 6 }}>
+                          ({t('aka', { names: s.aliases.join(', ') })})
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -332,7 +364,7 @@ export default function App() {
 
       {/* Summary stats */}
       {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: mergedAthletes.length ? 12 : 28 }}>
           <StatCard label={t('eventsFound')} value={results.length} isMobile={isMobile} />
           <StatCard
             label={t('bestTopsZones')}
@@ -366,11 +398,19 @@ export default function App() {
         </div>
       )}
 
+      {mergedAthletes.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 28, fontSize: 12, color: 'var(--text-muted)' }}>
+          {mergedAthletes.map(a => (
+            <div key={a.name}>{t('mergedNames', { name: a.name, aliases: a.aliases.join(', ') })}</div>
+          ))}
+        </div>
+      )}
+
       {/* Event cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 28 }}>
         {results.map((r, idx) => (
           <EventCard
-            key={`${r.eventId}-${r.category}`}
+            key={`${r.eventId}-${r.category}-${r.listedAs}`}
             result={r}
             prevResult={idx < results.length - 1 ? results[idx + 1] : null}
           />
