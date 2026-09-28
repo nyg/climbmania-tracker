@@ -32,7 +32,9 @@ climbmania-tracker/
 ├── pnpm-workspace.yaml     ← pnpm allowed build scripts
 ├── package.json
 ├── public/
+│   ├── count.js            ← self-hosted GoatCounter script
 │   └── events.json         ← pre-scraped event data
+├── worker/                 ← Cloudflare Worker proxying analytics hits to GoatCounter
 └── src/
     ├── main.jsx            ← React entry point
     ├── index.css           ← global styles + CSS variables
