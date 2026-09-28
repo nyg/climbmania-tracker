@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StatCard } from './components.jsx';
+import { ExternalLinkIcon, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
 
 function useIsMobile(breakpoint = 600) {
@@ -14,6 +14,10 @@ function useIsMobile(breakpoint = 600) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return isMobile;
 }
+
+const PROFILE_SITES = {
+  ifsc: { label: 'IFSC', url: id => `https://ifsc.results.info/athlete/${id}` },
+};
 
 function getInitialTheme() {
   const stored = localStorage.getItem('theme');
@@ -36,6 +40,15 @@ function buildMergeMap(groups) {
     mergeMap.set(nameKey(canonical), canonical);
   }
   return mergeMap;
+}
+
+function buildProfileMap(links, mergeMap) {
+  const profileMap = new Map();
+  for (const [name, sites] of Object.entries(links)) {
+    const known = Object.entries(sites).filter(([site]) => PROFILE_SITES[site]);
+    if (known.length) profileMap.set(mergeMap.get(nameKey(name)) ?? name, known);
+  }
+  return profileMap;
 }
 
 function flattenResults(events, mergeMap) {
@@ -93,6 +106,7 @@ export default function App() {
   const [theme, setTheme]             = useState(getInitialTheme);
   const [data, setData]               = useState(null);
   const [mergeGroups, setMergeGroups] = useState([]);
+  const [links, setLinks]             = useState({});
   const [loadErr, setLoadErr]         = useState(null);
   const [name, setName]               = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,15 +125,19 @@ export default function App() {
   useEffect(() => {
     const load = file => fetch(`${import.meta.env.BASE_URL}${file}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
-    Promise.all([load('events.json'), load('name-merges.json')])
-      .then(([events, merges]) => { setMergeGroups(merges); setData(events); })
+    Promise.all([load('events.json'), load('name-merges.json'), load('athlete-links.json')])
+      .then(([events, merges, athleteLinks]) => { setMergeGroups(merges); setLinks(athleteLinks); setData(events); })
       .catch(e => setLoadErr(e.message));
   }, []);
 
+  const mergeMap = useMemo(() => buildMergeMap(mergeGroups), [mergeGroups]);
+
   const allResults = useMemo(
-    () => data ? flattenResults(data.events ?? [], buildMergeMap(mergeGroups)) : [],
-    [data, mergeGroups],
+    () => data ? flattenResults(data.events ?? [], mergeMap) : [],
+    [data, mergeMap],
   );
+
+  const profileMap = useMemo(() => buildProfileMap(links, mergeMap), [links, mergeMap]);
 
   const athletes = useMemo(() => listAthletes(allResults), [allResults]);
 
@@ -163,6 +181,8 @@ export default function App() {
   }, [allResults, searchedAthletes]);
 
   const mergedAthletes = searchedAthletes.filter(a => a.aliases.length > 0);
+  const profiledAthletes = searchedAthletes.filter(a => profileMap.has(a.name));
+  const hasAthleteNotes = mergedAthletes.length > 0 || profiledAthletes.length > 0;
 
   const bestTopsResult = results.length ? results.reduce((best, r) => {
     const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks;
@@ -364,7 +384,7 @@ export default function App() {
 
       {/* Summary stats */}
       {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: mergedAthletes.length ? 12 : 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: hasAthleteNotes ? 12 : 28 }}>
           <StatCard label={t('eventsFound')} value={results.length} isMobile={isMobile} />
           <StatCard
             label={t('bestTopsZones')}
@@ -398,8 +418,25 @@ export default function App() {
         </div>
       )}
 
-      {mergedAthletes.length > 0 && (
+      {hasAthleteNotes && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 28, fontSize: 12, color: 'var(--text-muted)' }}>
+          {profiledAthletes.map(a => (
+            <div key={`profiles-${a.name}`} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px' }}>
+              {t('profilesOf', { name: a.name })}
+              {profileMap.get(a.name).map(([site, id]) => (
+                <a
+                  key={site}
+                  href={PROFILE_SITES[site].url(id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  {PROFILE_SITES[site].label}
+                  <ExternalLinkIcon />
+                </a>
+              ))}
+            </div>
+          ))}
           {mergedAthletes.map(a => (
             <div key={a.name}>{t('mergedNames', { name: a.name, aliases: a.aliases.join(', ') })}</div>
           ))}

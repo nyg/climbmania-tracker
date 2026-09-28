@@ -13,6 +13,7 @@
   "notFound": "⚠ \"{{name}}\" was not found in any event.",
   "aka": "a.k.a. {{names}}",
   "mergedNames": "Merged names: {{name}} also competed as {{aliases}}.",
+  "profilesOf": "Profiles of {{name}}:",
   "listedAs": "listed as {{name}}",
   "eventsFound": "Events",
   "bestTopsZones": "Best tops + zones",

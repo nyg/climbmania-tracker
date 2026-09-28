@@ -1,19 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { BlockGrid, ProgressBar } from './components.jsx';
+import { BlockGrid, ExternalLinkIcon, ProgressBar } from './components.jsx';
 
 const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it'];
-
-function ExternalLinkIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-      <polyline points="15 3 21 3 21 9" />
-      <line x1="10" y1="14" x2="21" y2="3" />
-    </svg>
-  );
-}
 
 const MONTHS = { January:0, February:1, March:2, April:3, May:4, June:5, July:6, August:7, September:8, October:9, November:10, December:11 };
 

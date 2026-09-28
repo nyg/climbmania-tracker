@@ -13,6 +13,7 @@
   "notFound": "⚠ « {{name}} » introuvable dans les événements.",
   "aka": "alias {{names}}",
   "mergedNames": "Noms regroupés : {{name}} a aussi participé sous {{aliases}}.",
+  "profilesOf": "Profils de {{name}} :",
   "listedAs": "inscrit·e comme {{name}}",
   "eventsFound": "Événements",
   "bestTopsZones": "Tops + zones",

@@ -90,7 +90,7 @@ def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterato
 # ---------------------------------------------------------------------------
 
 
-def _match_key(name: str) -> str:
+def match_key(name: str) -> str:
     """Return the words of name_key(*name*) sorted, so word order does not matter.
 
     A single word like "BasileRoch" is split at its inner capitals first.
@@ -160,13 +160,13 @@ def find_candidates(
     for name, _, full_name in _canonical_results(events, load_merge_map(merges_path)):
         counts[name] += 1
         if full_name:
-            names_by_full_name[_match_key(full_name)].add(name)
+            names_by_full_name[match_key(full_name)].add(name)
 
     distinct = {frozenset((a, b)) for group in load_groups(distinct_path) for a in group for b in group if a != b}
 
     names_by_key: dict[str, list[str]] = defaultdict(list)
     for name in counts:
-        names_by_key[_match_key(name)].append(name)
+        names_by_key[match_key(name)].append(name)
 
     edges = [(a, b, SAME_WORDS, 1.0) for names in names_by_key.values() for a, b in combinations(names, 2)]
     for key_a, key_b, ratio in _similar_keys(list(names_by_key)):
