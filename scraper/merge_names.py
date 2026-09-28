@@ -77,12 +77,19 @@ def load_merge_map(path: Path = MERGES_PATH) -> dict[str, str]:
     return merge_map
 
 
+def athlete_name(result: dict, merge_map: dict[str, str]) -> str:
+    name = result["name"]
+    full_name = result.get("fullName")
+    if full_name and completes(full_name, name):
+        name = full_name
+    return merge_map.get(name_key(name), name)
+
+
 def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterator[tuple[str, str, str | None]]:
     for event in events:
         for category in event["categories"]:
             for athlete in category["athletes"]:
-                name = merge_map.get(name_key(athlete["name"]), athlete["name"])
-                yield name, category["name"], athlete.get("fullName")
+                yield athlete_name(athlete, merge_map), category["name"], athlete.get("fullName")
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +97,7 @@ def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterato
 # ---------------------------------------------------------------------------
 
 
-def _match_key(name: str) -> str:
+def match_key(name: str) -> str:
     """Return the words of name_key(*name*) sorted, so word order does not matter.
 
     A single word like "BasileRoch" is split at its inner capitals first.
@@ -98,6 +105,18 @@ def _match_key(name: str) -> str:
     if " " not in name.strip():
         name = re.sub(r"(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])", " ", name)
     return " ".join(sorted(name_key(name).split()))
+
+
+def completes(full_name: str, name: str) -> bool:
+    words = match_key(name).split()
+    full_words = match_key(full_name).split()
+    single_word = len(name.replace(",", " ").split()) == 1
+    abbreviated = any(word not in full_words for word in words)
+    return (
+        len(full_words) > 1
+        and all(any(full_word.startswith(word) for full_word in full_words) for word in words)
+        and (single_word or abbreviated)
+    )
 
 
 def _is_tidy(name: str) -> bool:
@@ -160,13 +179,13 @@ def find_candidates(
     for name, _, full_name in _canonical_results(events, load_merge_map(merges_path)):
         counts[name] += 1
         if full_name:
-            names_by_full_name[_match_key(full_name)].add(name)
+            names_by_full_name[match_key(full_name)].add(name)
 
     distinct = {frozenset((a, b)) for group in load_groups(distinct_path) for a in group for b in group if a != b}
 
     names_by_key: dict[str, list[str]] = defaultdict(list)
     for name in counts:
-        names_by_key[_match_key(name)].append(name)
+        names_by_key[match_key(name)].append(name)
 
     edges = [(a, b, SAME_WORDS, 1.0) for names in names_by_key.values() for a, b in combinations(names, 2)]
     for key_a, key_b, ratio in _similar_keys(list(names_by_key)):
