@@ -65,7 +65,7 @@ export default function EventCard({ result, prevResult }) {
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
           {listedAs !== athleteName && (
-            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 2 }}>{t('listedAs', { name: listedAs })}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 2 }}>{t('listedAs', { name: listedAs, context: /\bFemmes\b/.test(category) ? 'female' : undefined })}</div>
           )}
         </div>
       </div>

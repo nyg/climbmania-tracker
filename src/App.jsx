@@ -382,9 +382,34 @@ export default function App() {
         </div>
       )}
 
+      {hasAthleteNotes && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, fontSize: 11, color: 'var(--text-faint)' }}>
+          {profiledAthletes.map(a => (
+            <div key={`profiles-${a.name}`} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px' }}>
+              {t('profilesOf', { name: a.name })}
+              {profileMap.get(a.name).map(([site, id]) => (
+                <a
+                  key={site}
+                  href={PROFILE_SITES[site].url(id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
+                  {PROFILE_SITES[site].label}
+                  <ExternalLinkIcon />
+                </a>
+              ))}
+            </div>
+          ))}
+          {mergedAthletes.map(a => (
+            <div key={a.name}>{t('mergedNames', { name: a.name, aliases: a.aliases.join(', ') })}</div>
+          ))}
+        </div>
+      )}
+
       {/* Summary stats */}
       {results.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: hasAthleteNotes ? 12 : 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 28 }}>
           <StatCard label={t('eventsFound')} value={results.length} isMobile={isMobile} />
           <StatCard
             label={t('bestTopsZones')}
@@ -415,31 +440,6 @@ export default function App() {
             subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
             isMobile={isMobile}
           />
-        </div>
-      )}
-
-      {hasAthleteNotes && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 28, fontSize: 12, color: 'var(--text-muted)' }}>
-          {profiledAthletes.map(a => (
-            <div key={`profiles-${a.name}`} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px' }}>
-              {t('profilesOf', { name: a.name })}
-              {profileMap.get(a.name).map(([site, id]) => (
-                <a
-                  key={site}
-                  href={PROFILE_SITES[site].url(id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                >
-                  {PROFILE_SITES[site].label}
-                  <ExternalLinkIcon />
-                </a>
-              ))}
-            </div>
-          ))}
-          {mergedAthletes.map(a => (
-            <div key={a.name}>{t('mergedNames', { name: a.name, aliases: a.aliases.join(', ') })}</div>
-          ))}
         </div>
       )}
 

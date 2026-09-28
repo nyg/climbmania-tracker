@@ -46,8 +46,8 @@ There is **no live scraping** and **no Vite proxy** — the old CORS workaround 
 6. `scraper/athlete_links.py` — searches the IFSC results API (`https://ifsc.results.info/api/v1/athletes?name=`, needs a browser `User-Agent` and a `Referer`) for every athlete with a result outside the youth categories (M8–M17). It keeps IFSC athletes whose first and last name have the same words as one of the athlete's names or full names, and whose gender matches the categories. `--review` asks about each match, showing the IFSC country and birthday: accepted ones go to `athlete-links.json`, rejected ones go to `public/ifsc-rejected.json` so they are not suggested again. Each decision is saved straight away.
 
 **React data flow:**
-1. `App.jsx` — fetches `events.json`, `name-merges.json` and `athlete-links.json` on mount and maps each result to its athlete's canonical name. The autocomplete shows one line per athlete with their other names ("a.k.a."); a query matches any of those names, ignoring case and accents. Computes summary stats (best tops/zones rate, best rank, best points) from results, and lists the athlete's profile links (sites in `PROFILE_SITES`) and merged names under them.
-2. `EventCard.jsx` — renders a single event result card: event title, date, category, the name the result was listed under when it differs from the canonical one, rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
+1. `App.jsx` — fetches `events.json`, `name-merges.json` and `athlete-links.json` on mount and maps each result to its athlete's canonical name. The autocomplete shows one line per athlete with their other names ("a.k.a."); a query matches any of those names, ignoring case and accents. Computes summary stats (best tops/zones rate, best rank, best points) from results, and lists the athlete's profile links (sites in `PROFILE_SITES`) and merged names above them, below the legend.
+2. `EventCard.jsx` — renders a single event result card: event title, date, category, the name the result was listed under when it differs from the canonical one (the `listedAs_female` translation is used in women's categories), rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
 3. `components.jsx` — four pure display components: `BlockGrid` (coloured squares per block number), `ExternalLinkIcon`, `ProgressBar`, `StatCard`.
 4. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
 
@@ -77,6 +77,6 @@ Fixed accent colours (same in both themes): indigo `#6366f1`, tops green `#16a34
 
 **Block data is arrays of 1-based block numbers** (`tops: [1, 3, 5]`, `zones: [2]`). `BlockGrid` iterates from 1 to `total` and checks `tops.includes(n)` / `zones.includes(n)`. If the scraper's parsing changes, update `parse_blocks()` in `scraper/scrape.py`.
 
-**i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text.
+**i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text. No inclusive writing (`inscrit·e`, `iscritto/a`): when a string depends on the athlete's gender, use an i18next context (`key_female`) picked from the category name (`Femmes` / `Homme`), with the masculine form as the base key.
 
 **`vite.config.js`** sets `base: '/climbmania-tracker/'` for GitHub Pages deployment. Use `import.meta.env.BASE_URL` when constructing asset paths (e.g. the `events.json` fetch).
