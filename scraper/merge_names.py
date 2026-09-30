@@ -20,7 +20,7 @@ DISTINCT_PATH = _ROOT / "public" / "name-distinct.json"
 SIMILARITY_THRESHOLD = 0.93
 
 SAME_WORDS = "same words"
-SAME_FULL_NAME = "same full name"
+SAME_SMALL_NAME = "same small name"
 SIMILAR_SPELLING = "similar spelling"
 
 
@@ -142,7 +142,7 @@ def find_candidates(
         edges += [(a, b, SIMILAR_SPELLING, ratio) for a in names_by_key[key_a] for b in names_by_key[key_b]]
     for key, names in names_by_full_name.items():
         linked = sorted(names.union(names_by_key.get(key, [])))
-        edges += [(a, b, SAME_FULL_NAME, 1.0) for a, b in combinations(linked, 2)]
+        edges += [(a, b, SAME_SMALL_NAME, 1.0) for a, b in combinations(linked, 2)]
 
     parent = {name: name for name in counts}
     members = {name: {name} for name in counts}
@@ -266,10 +266,10 @@ def review(candidates: list[dict], merges_path: Path, distinct_path: Path) -> No
         names = candidate["names"]
         print(f"\n[{i}/{len(candidates)}] Same athlete? ({describe_reasons(candidate['reasons'])})")
         details = zip(names, candidate["counts"], candidate["categories"], candidate["full_names"])
-        for n, (name, count, cats, given_names) in enumerate(details, start=1):
+        for n, (name, count, cats, small_names) in enumerate(details, start=1):
             shown = ", ".join(cats[:2]) + (", …" if len(cats) > 2 else "")
-            given = f" · full name: {', '.join(given_names)}" if given_names else ""
-            print(f"  {n}) {name}  — {count}× · {shown}{given}")
+            small = f" · small name: {', '.join(small_names)}" if small_names else ""
+            print(f"  {n}) {name}  — {count}× · {shown}{small}")
 
         decision = _ask(len(names))
         if decision == "q":
