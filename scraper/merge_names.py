@@ -121,11 +121,16 @@ def find_candidates(
     merges_path: Path = MERGES_PATH,
     distinct_path: Path = DISTINCT_PATH,
 ) -> list[dict]:
+    merge_map = load_merge_map(merges_path)
     counts: Counter[str] = Counter()
+    categories: dict[str, set[str]] = defaultdict(set)
+    full_names: dict[str, set[str]] = defaultdict(set)
     names_by_full_name: dict[str, set[str]] = defaultdict(set)
-    for name, _, full_name in _canonical_results(events, load_merge_map(merges_path)):
+    for name, category, full_name in _canonical_results(events, merge_map):
         counts[name] += 1
+        categories[name].add(category)
         if full_name:
+            full_names[name].add(full_name)
             names_by_full_name[match_key(full_name)].add(name)
 
     names_by_key: dict[str, list[str]] = defaultdict(list)
@@ -143,9 +148,10 @@ def find_candidates(
     members = {name: {name} for name in counts}
     excluded: dict[str, set[str]] = {name: set() for name in counts}
     for group in load_groups(distinct_path):
-        for name in group:
+        canonical_group = {merge_map.get(name_key(name), name) for name in group}
+        for name in canonical_group:
             if name in excluded:
-                excluded[name].update(other for other in group if other != name)
+                excluded[name].update(canonical_group - {name})
 
     def root(name: str) -> str:
         while parent[name] != name:
@@ -173,7 +179,15 @@ def find_candidates(
         if len(group) < 2:
             continue
         names = sorted(group, key=lambda n: (n not in canonicals, -counts[n], not _is_tidy(n), n.casefold()))
-        candidates.append({"names": names, "counts": [counts[n] for n in names], "reasons": reasons[r]})
+        candidates.append(
+            {
+                "names": names,
+                "counts": [counts[n] for n in names],
+                "categories": [sorted(categories[n]) for n in names],
+                "full_names": [sorted(full_names[n]) for n in names],
+                "reasons": reasons[r],
+            }
+        )
     return sorted(candidates, key=lambda c: c["names"][0].casefold())
 
 
@@ -236,14 +250,7 @@ def _ask(count: int) -> list[list[int]] | str:
             return partition
 
 
-def review(candidates: list[dict], events: list[dict], merges_path: Path, distinct_path: Path) -> None:
-    categories: dict[str, set[str]] = defaultdict(set)
-    full_names: dict[str, set[str]] = defaultdict(set)
-    for name, category, full_name in _canonical_results(events, load_merge_map(merges_path)):
-        categories[name].add(category)
-        if full_name:
-            full_names[name].add(full_name)
-
+def review(candidates: list[dict], merges_path: Path, distinct_path: Path) -> None:
     merges = load_groups(merges_path)
     distinct = load_groups(distinct_path)
     merged = rejected = 0
@@ -259,10 +266,10 @@ def review(candidates: list[dict], events: list[dict], merges_path: Path, distin
     for i, candidate in enumerate(candidates, start=1):
         names = candidate["names"]
         print(f"\n[{i}/{len(candidates)}] Same athlete? ({describe_reasons(candidate['reasons'])})")
-        for n, (name, count) in enumerate(zip(names, candidate["counts"]), start=1):
-            cats = sorted(categories[name])
+        details = zip(names, candidate["counts"], candidate["categories"], candidate["full_names"])
+        for n, (name, count, cats, given_names) in enumerate(details, start=1):
             shown = ", ".join(cats[:2]) + (", …" if len(cats) > 2 else "")
-            given = f" · full name: {', '.join(sorted(full_names[name]))}" if full_names[name] else ""
+            given = f" · full name: {', '.join(given_names)}" if given_names else ""
             print(f"  {n}) {name}  — {count}× · {shown}{given}")
 
         decision = _ask(len(names))
@@ -300,7 +307,7 @@ def main() -> None:
     candidates = find_candidates(events)
 
     if args.review and candidates:
-        review(candidates, events, MERGES_PATH, DISTINCT_PATH)
+        review(candidates, MERGES_PATH, DISTINCT_PATH)
     else:
         print_candidates(candidates, shlex.join(["./scraper/merge_names.py", *sys.argv[1:], "--review"]))
 
