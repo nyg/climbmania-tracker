@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLinkIcon, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
@@ -130,10 +130,10 @@ export default function App() {
   const [loadErr, setLoadErr]         = useState(null);
   const [name, setName]               = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [exactSearch, setExactSearch] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -167,15 +167,23 @@ export default function App() {
   useEffect(() => { setFocusedIndex(-1); }, [suggestions]);
 
   const handleSearch = () => {
-    setSearchQuery(name.trim());
-    setExactSearch(false);
-    setShowDropdown(false);
+    const query = name.trim();
+    const exactMatch = suggestions.find(s => foldName(s.name) === foldName(query));
+    const picked = exactMatch ?? (suggestions.length === 1 ? suggestions[0] : null);
+    if (picked) {
+      handleSelect(picked.name);
+    } else if (suggestions.length > 1) {
+      inputRef.current?.focus();
+      setShowDropdown(true);
+    } else {
+      setSearchQuery(query);
+      setShowDropdown(false);
+    }
   };
 
   const handleSelect = (athleteName) => {
     setName(athleteName);
     setSearchQuery(athleteName);
-    setExactSearch(true);
     setShowDropdown(false);
     setHoveredSuggestion(null);
     setFocusedIndex(-1);
@@ -190,16 +198,15 @@ export default function App() {
     });
   }, [searchQuery]);
 
-  const searchedAthletes = useMemo(() => {
-    if (!searchQuery) return [];
-    if (exactSearch) return athletes.filter(a => a.name === searchQuery);
-    return matchAthletes(athletes, searchQuery);
-  }, [athletes, searchQuery, exactSearch]);
+  const searchedAthletes = useMemo(
+    () => searchQuery ? athletes.filter(a => a.name === searchQuery) : [],
+    [athletes, searchQuery],
+  );
 
-  const results = useMemo(() => {
-    const names = new Set(searchedAthletes.map(a => a.name));
-    return allResults.filter(r => names.has(r.athleteName));
-  }, [allResults, searchedAthletes]);
+  const results = useMemo(
+    () => searchQuery ? allResults.filter(r => r.athleteName === searchQuery) : [],
+    [allResults, searchQuery],
+  );
 
   const mergedAthletes = searchedAthletes.filter(a => a.aliases.length > 0);
   const profiledAthletes = searchedAthletes.filter(a => profileMap.has(a.name));
@@ -239,12 +246,15 @@ export default function App() {
             {/* Input + dropdown wrapper */}
             <div style={{ position: 'relative', flex: 1 }}>
               <input
+                ref={inputRef}
                 className="name-input"
                 type="text"
                 value={name}
                 onChange={e => { setName(e.target.value); setShowDropdown(true); }}
                 onFocus={() => name.trim() && setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                onBlur={() => setTimeout(() => {
+                  if (document.activeElement !== inputRef.current) setShowDropdown(false);
+                }, 150)}
                 onKeyDown={e => {
                   if (e.key === 'ArrowDown') {
                     e.preventDefault();
