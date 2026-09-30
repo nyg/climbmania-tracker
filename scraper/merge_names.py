@@ -43,10 +43,10 @@ SIMILAR_SPELLING = "similar spelling"
 
 
 def name_key(name: str) -> str:
-    """Return *name* lowercased, without diacritics, punctuation, digits or extra spaces."""
+    """Return *name* lowercased, without diacritics, punctuation or extra spaces."""
     n = unicodedata.normalize("NFD", name.lower().strip())
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-    n = re.sub(r"[^a-z ]", " ", n)
+    n = re.sub(r"[^a-z0-9 ]", " ", n)
     return re.sub(r"\s+", " ", n).strip()
 
 
@@ -98,13 +98,13 @@ def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterato
 
 
 def match_key(name: str) -> str:
-    """Return the words of name_key(*name*) sorted, so word order does not matter.
+    """Return the words of name_key(*name*) without digits, sorted, so word order and digits do not matter.
 
     A single word like "BasileRoch" is split at its inner capitals first.
     """
     if " " not in name.strip():
         name = re.sub(r"(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])", " ", name)
-    return " ".join(sorted(name_key(name).split()))
+    return " ".join(sorted(re.sub(r"[0-9]", " ", name_key(name)).split()))
 
 
 def completes(full_name: str, name: str) -> bool:

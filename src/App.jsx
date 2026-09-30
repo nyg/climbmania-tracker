@@ -30,12 +30,12 @@ function foldName(name) {
 }
 
 function nameKey(name) {
-  return foldName(name).replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+  return foldName(name).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function matchWords(name) {
   const spaced = name.trim().includes(' ') ? name : name.replace(/(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])/g, ' ');
-  return nameKey(spaced).split(' ').filter(Boolean);
+  return nameKey(spaced).replace(/[0-9]/g, ' ').split(' ').filter(Boolean);
 }
 
 function completes(fullName, name) {
