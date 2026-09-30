@@ -145,7 +145,8 @@ export default function App() {
   useEffect(() => {
     const load = file => fetch(`${import.meta.env.BASE_URL}${file}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
-    Promise.all([load('events.json'), load('name-merges.json'), load('athlete-links.json')])
+    const loadOptional = (file, fallback) => load(file).catch(() => fallback);
+    Promise.all([load('events.json'), loadOptional('name-merges.json', []), loadOptional('athlete-links.json', {})])
       .then(([events, merges, athleteLinks]) => { setMergeGroups(merges); setLinks(athleteLinks); setData(events); })
       .catch(e => setLoadErr(e.message));
   }, []);
