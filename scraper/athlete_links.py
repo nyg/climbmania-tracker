@@ -13,7 +13,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
-from merge_names import EVENTS_PATH, athlete_name, load_merge_map, match_key, name_key
+from merge_names import EVENTS_PATH, athlete_name, load_merge_map, match_key
 
 _ROOT = Path(__file__).resolve().parent.parent
 LINKS_PATH = _ROOT / "public" / "athlete-links.json"
@@ -105,7 +105,7 @@ def find_candidates(
     merge_map = load_merge_map()
 
     def canonical(name: str) -> str:
-        return merge_map.get(name_key(name), name)
+        return merge_map.get(name, name)
 
     linked = {canonical(name) for name, sites in links.items() if "ifsc" in sites}
     rejected_ids: dict[str, set[int]] = defaultdict(set)

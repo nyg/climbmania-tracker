@@ -27,7 +27,7 @@ SIMILAR_SPELLING = "similar spelling"
 def name_key(name: str) -> str:
     n = unicodedata.normalize("NFD", name.lower().strip())
     n = "".join(c for c in n if unicodedata.category(c) != "Mn")
-    n = re.sub(r"[^a-z0-9 ]", " ", n)
+    n = re.sub(r"[^a-z ]", " ", n)
     return re.sub(r"\s+", " ", n).strip()
 
 
@@ -46,8 +46,8 @@ def load_merge_map(path: Path = MERGES_PATH) -> dict[str, str]:
     merge_map: dict[str, str] = {}
     for canonical, *aliases in load_groups(path):
         for alias in aliases:
-            merge_map[name_key(alias)] = canonical
-        merge_map[name_key(canonical)] = canonical
+            merge_map[alias] = canonical
+        merge_map[canonical] = canonical
     return merge_map
 
 
@@ -56,7 +56,7 @@ def athlete_name(result: dict, merge_map: dict[str, str]) -> str:
     full_name = result.get("fullName")
     if full_name and completes(full_name, name):
         name = full_name
-    return merge_map.get(name_key(name), name)
+    return merge_map.get(name, name)
 
 
 def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterator[tuple[str, str, str | None]]:
@@ -69,7 +69,7 @@ def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterato
 def match_key(name: str) -> str:
     if " " not in name.strip():
         name = re.sub(r"(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])", " ", name)
-    return " ".join(sorted(re.sub(r"[0-9]", " ", name_key(name)).split()))
+    return " ".join(sorted(name_key(name).split()))
 
 
 def completes(full_name: str, name: str) -> bool:
@@ -148,7 +148,7 @@ def find_candidates(
     members = {name: {name} for name in counts}
     excluded: dict[str, set[str]] = {name: set() for name in counts}
     for group in load_groups(distinct_path):
-        canonical_group = {merge_map.get(name_key(name), name) for name in group}
+        canonical_group = {merge_map.get(name, name) for name in group}
         for name in canonical_group:
             if name in excluded:
                 excluded[name].update(canonical_group - {name})
@@ -207,11 +207,10 @@ def print_candidates(candidates: list[dict], review_cmd: str) -> None:
 
 
 def _merge_group(groups: list[list[str]], names: list[str], canonical: str) -> list[list[str]]:
-    keys = {name_key(n) for n in names}
     merged = [canonical]
     kept = []
     for group in groups:
-        if any(name_key(n) in keys for n in group):
+        if any(n in names for n in group):
             merged += group
         else:
             kept.append(group)
