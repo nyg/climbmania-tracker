@@ -48,8 +48,12 @@ function completes(fullName, name) {
     && (singleWord || abbreviated);
 }
 
+function listedName(athlete) {
+  return athlete.fullName && completes(athlete.fullName, athlete.name) ? athlete.fullName : athlete.name;
+}
+
 function athleteName(athlete, mergeMap) {
-  const name = athlete.fullName && completes(athlete.fullName, athlete.name) ? athlete.fullName : athlete.name;
+  const name = listedName(athlete);
   return mergeMap.get(name) ?? name;
 }
 
@@ -78,7 +82,7 @@ function flattenResults(events, mergeMap) {
       for (const athlete of category.athletes ?? []) {
         results.push({
           athleteName: athleteName(athlete, mergeMap),
-          listedAs: athlete.name,
+          listedAs: listedName(athlete),
           eventId: event.id,
           eventTitle: event.title,
           eventDate: event.date,
@@ -112,6 +116,43 @@ function listAthletes(results) {
       return { name, aliases: sortedAliases, searchForms: [name, ...sortedAliases].map(foldName) };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function joinNodes(nodes) {
+  return nodes.map((node, i) => <React.Fragment key={i}>{i > 0 && ', '}{node}</React.Fragment>);
+}
+
+function AthleteNote({ name, aliases, profiles }) {
+  const { t } = useTranslation();
+  return (
+    <div>
+      {profiles && (
+        <>
+          {t('profilesOn', { name })}{' '}
+          {joinNodes(profiles.map(([site, id]) => (
+            <a
+              href={PROFILE_SITES[site].url(id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              {PROFILE_SITES[site].label}
+              <ExternalLinkIcon />
+            </a>
+          )))}.
+        </>
+      )}
+      {profiles && aliases.length > 0 && ' '}
+      {aliases.length > 0 && (
+        <>
+          {t('otherNames')}{' '}
+          {joinNodes(aliases.map(alias => (
+            <span style={{ textDecoration: 'underline dashed', textUnderlineOffset: 3 }}>{alias}</span>
+          )))}.
+        </>
+      )}
+    </div>
+  );
 }
 
 function matchAthletes(athletes, query) {
@@ -208,9 +249,7 @@ export default function App() {
     [allResults, searchQuery],
   );
 
-  const mergedAthletes = searchedAthletes.filter(a => a.aliases.length > 0);
-  const profiledAthletes = searchedAthletes.filter(a => profileMap.has(a.name));
-  const hasAthleteNotes = mergedAthletes.length > 0 || profiledAthletes.length > 0;
+  const notedAthletes = searchedAthletes.filter(a => a.aliases.length > 0 || profileMap.has(a.name));
 
   const bestTopsResult = results.length ? results.reduce((best, r) => {
     const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks;
@@ -413,27 +452,10 @@ export default function App() {
         </div>
       )}
 
-      {hasAthleteNotes && (
+      {notedAthletes.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, fontSize: 11, color: 'var(--text-faint)' }}>
-          {profiledAthletes.map(a => (
-            <div key={`profiles-${a.name}`} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 10px' }}>
-              {t('profilesOf', { name: a.name, count: profileMap.get(a.name).length })}
-              {profileMap.get(a.name).map(([site, id]) => (
-                <a
-                  key={site}
-                  href={PROFILE_SITES[site].url(id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: '#6366f1', textDecoration: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                >
-                  {PROFILE_SITES[site].label}
-                  <ExternalLinkIcon />
-                </a>
-              ))}
-            </div>
-          ))}
-          {mergedAthletes.map(a => (
-            <div key={a.name}>{t('mergedNames', { name: a.name, aliases: a.aliases.join(', ') })}</div>
+          {notedAthletes.map(a => (
+            <AthleteNote key={a.name} name={a.name} aliases={a.aliases} profiles={profileMap.get(a.name)} />
           ))}
         </div>
       )}
