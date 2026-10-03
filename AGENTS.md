@@ -4,7 +4,7 @@
 
 ```bash
 pnpm install     # install dependencies
-pnpm dev         # start dev server at http://localhost:3000
+pnpm dev         # start dev server on a random free port, printed on start
 pnpm build       # production build
 pnpm preview     # serve production build at http://localhost:4173
 

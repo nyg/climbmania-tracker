@@ -5,6 +5,6 @@ export default defineConfig({
   base: '/climbmania-tracker/',
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 0,
   },
 })
