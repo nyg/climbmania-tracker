@@ -20,7 +20,7 @@ pnpm install
 # 2. Start the dev server
 pnpm dev
 
-# 3. Open http://localhost:3000, enter an athlete name and hit the Enter key
+# 3. Open the URL printed by the dev server, enter an athlete name and hit the Enter key
 ```
 
 ## Project structure
