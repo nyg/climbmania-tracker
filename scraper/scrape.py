@@ -9,6 +9,7 @@ import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
@@ -16,6 +17,10 @@ from bs4 import BeautifulSoup
 from merge_names import EVENTS_PATH, find_candidates, print_candidates
 
 GROUP_URL = "https://climbmania.ch/fr/groups/1"
+
+SWISS_TZ = ZoneInfo("Europe/Zurich")
+QUALIFICATION_END_HOUR = 18
+FINALS_END_HOUR = 21
 
 HEADERS = {
     "User-Agent": (
@@ -208,7 +213,20 @@ def _parse_event_date(date_str: str) -> datetime | None:
         return None
 
 
-def scrape(output: str, delay: float, since: date | None) -> None:
+def _event_time(date_str: str, hour: int) -> datetime | None:
+    parsed = _parse_event_date(date_str)
+    return parsed.replace(hour=hour, tzinfo=SWISS_TZ) if parsed else None
+
+
+def _has_new_results(events: list[dict], output: str, now: datetime) -> bool:
+    last = datetime.fromisoformat(json.loads(Path(output).read_text(encoding="utf-8"))["scrapedAt"])
+    moments = [
+        _event_time(ev["date"], hour) for ev in events for hour in (QUALIFICATION_END_HOUR, FINALS_END_HOUR)
+    ]
+    return any(moment is not None and last < moment <= now for moment in moments)
+
+
+def scrape(output: str, delay: float, since: date | None, if_new_results: bool) -> None:
     session = requests.Session()
 
     print(f"Fetching group page: {GROUP_URL}")
@@ -217,13 +235,18 @@ def scrape(output: str, delay: float, since: date | None) -> None:
         print("Failed to fetch group page.", file=sys.stderr)
         sys.exit(1)
 
-    today = datetime.now(timezone.utc).replace(tzinfo=None).date()
+    now = datetime.now(timezone.utc)
     all_events = discover_events(group_soup)
+
+    if if_new_results and Path(output).exists() and not _has_new_results(all_events, output, now):
+        print("No new results since the last scrape.")
+        return
+
     events_meta = []
     for ev in all_events:
-        parsed = _parse_event_date(ev["date"])
-        if parsed is not None and parsed.date() > today:
-            print(f"  ↷ Skipping future event {ev['id']} — {ev['title']} ({ev['date']})")
+        qualification_end = _event_time(ev["date"], QUALIFICATION_END_HOUR)
+        if qualification_end is not None and qualification_end > now:
+            print(f"  ↷ Skipping event {ev['id']} without results yet — {ev['title']} ({ev['date']})")
         else:
             events_meta.append(ev)
 
@@ -302,8 +325,13 @@ def main() -> None:
         type=date.fromisoformat,
         help="Only scrape events on or after this date (YYYY-MM-DD); older events are kept from the existing output file",
     )
+    parser.add_argument(
+        "--if-new-results",
+        action="store_true",
+        help="Scrape only if an event's qualification or finals ended since the last scrape",
+    )
     args = parser.parse_args()
-    scrape(args.output, args.delay, args.since)
+    scrape(args.output, args.delay, args.since, args.if_new_results)
 
 
 if __name__ == "__main__":
