@@ -5,6 +5,7 @@ dist-ssr/
 .env
 .DS_Store
 .venv/
+.ifsc-cache.json
 __pycache__/
 .wrangler/
 .dev.vars*
