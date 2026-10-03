@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-from merge_names import EVENTS_PATH, find_candidates, print_candidates
+from merge_names import EVENTS_PATH, completes, find_candidates, print_candidates
 
 GROUP_URL = "https://climbmania.ch/fr/groups/1"
 
@@ -166,6 +166,8 @@ def parse_athlete_row(row) -> dict | None:
     }
     if full_name and full_name != name:
         athlete["fullName"] = full_name
+        if completes(full_name, name):
+            athlete["listedName"] = full_name
     return athlete
 
 

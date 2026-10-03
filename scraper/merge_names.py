@@ -9,7 +9,7 @@ import unicodedata
 from collections import Counter, defaultdict
 from collections.abc import Iterator
 from difflib import SequenceMatcher
-from itertools import combinations
+from itertools import combinations, permutations
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -60,10 +60,7 @@ def load_merge_map(path: Path = MERGES_PATH) -> dict[str, str]:
 
 
 def athlete_name(result: dict, merge_map: dict[str, str]) -> str:
-    name = result["name"]
-    full_name = result.get("fullName")
-    if full_name and completes(full_name, name):
-        name = full_name
+    name = result.get("listedName", result["name"])
     return merge_map.get(name, name)
 
 
@@ -89,11 +86,11 @@ def completes(full_name: str, name: str) -> bool:
     full_words = name_words(full_name)
     single_word = len(name.replace(",", " ").split()) <= 1
     abbreviated = any(word not in full_words for word in words)
-    return (
-        len(full_words) > 1
-        and all(any(full_word.startswith(word) for full_word in full_words) for word in words)
-        and (single_word or abbreviated)
+    spelled_out = any(
+        all(full_word.startswith(word) for word, full_word in zip(words, picked))
+        for picked in permutations(full_words, len(words))
     )
+    return len(full_words) > 1 and spelled_out and (single_word or abbreviated)
 
 
 def _is_tidy(name: str) -> bool:

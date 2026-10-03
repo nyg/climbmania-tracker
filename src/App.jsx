@@ -29,29 +29,6 @@ function foldName(name) {
   return name.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '');
 }
 
-function nameKey(name) {
-  return foldName(name).replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function matchWords(name) {
-  const spaced = name.trim().includes(' ') ? name : name.replace(/(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])/g, ' ');
-  return nameKey(spaced).split(' ').filter(Boolean);
-}
-
-function completes(fullName, name) {
-  const words = matchWords(name);
-  const fullWords = matchWords(fullName);
-  const singleWord = name.replace(/,/g, ' ').split(/\s+/).filter(Boolean).length <= 1;
-  const abbreviated = words.some(word => !fullWords.includes(word));
-  return fullWords.length > 1
-    && words.every(word => fullWords.some(fullWord => fullWord.startsWith(word)))
-    && (singleWord || abbreviated);
-}
-
-function listedName(athlete) {
-  return athlete.fullName && completes(athlete.fullName, athlete.name) ? athlete.fullName : athlete.name;
-}
-
 function buildMergeMap(groups) {
   const mergeMap = new Map();
   for (const [canonical, ...aliases] of groups) {
@@ -75,7 +52,7 @@ function flattenResults(events, mergeMap) {
   for (const event of events) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
-        const listedAs = listedName(athlete);
+        const listedAs = athlete.listedName ?? athlete.name;
         results.push({
           athleteName: mergeMap.get(listedAs) ?? listedAs,
           listedAs,
@@ -204,10 +181,10 @@ export default function App() {
 
   const handleSearch = () => {
     const query = name.trim();
-    const exactMatch = suggestions.find(s => foldName(s.name) === foldName(query));
-    const picked = exactMatch ?? (suggestions.length === 1 ? suggestions[0] : null);
-    if (picked) {
-      handleSelect(picked.name);
+    const exactMatches = suggestions.filter(s => foldName(s.name) === foldName(query));
+    const candidates = exactMatches.length ? exactMatches : suggestions;
+    if (candidates.length === 1) {
+      handleSelect(candidates[0].name);
     } else if (suggestions.length > 1) {
       inputRef.current?.focus();
       setShowDropdown(true);
