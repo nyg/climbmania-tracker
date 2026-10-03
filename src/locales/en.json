@@ -15,6 +15,7 @@
   "profilesOn": "{{name}} on",
   "otherNames": "Other names used:",
   "listedAs": "listed as {{name}}",
+  "listedAs_female": "listed as {{name}}",
   "eventsFound": "Events",
   "bestTopsZones": "Best tops + zones",
   "bestRank": "Best rank",

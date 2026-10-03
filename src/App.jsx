@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLinkIcon, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
@@ -41,7 +41,7 @@ function matchWords(name) {
 function completes(fullName, name) {
   const words = matchWords(name);
   const fullWords = matchWords(fullName);
-  const singleWord = name.replace(/,/g, ' ').trim().split(/\s+/).length === 1;
+  const singleWord = name.replace(/,/g, ' ').split(/\s+/).filter(Boolean).length <= 1;
   const abbreviated = words.some(word => !fullWords.includes(word));
   return fullWords.length > 1
     && words.every(word => fullWords.some(fullWord => fullWord.startsWith(word)))
@@ -50,11 +50,6 @@ function completes(fullName, name) {
 
 function listedName(athlete) {
   return athlete.fullName && completes(athlete.fullName, athlete.name) ? athlete.fullName : athlete.name;
-}
-
-function athleteName(athlete, mergeMap) {
-  const name = listedName(athlete);
-  return mergeMap.get(name) ?? name;
 }
 
 function buildMergeMap(groups) {
@@ -80,9 +75,10 @@ function flattenResults(events, mergeMap) {
   for (const event of events) {
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
+        const listedAs = listedName(athlete);
         results.push({
-          athleteName: athleteName(athlete, mergeMap),
-          listedAs: listedName(athlete),
+          athleteName: mergeMap.get(listedAs) ?? listedAs,
+          listedAs,
           eventId: event.id,
           eventTitle: event.title,
           eventDate: event.date,
@@ -125,7 +121,7 @@ function joinNodes(nodes) {
 function AthleteNote({ name, aliases, profiles }) {
   const { t } = useTranslation();
   return (
-    <div>
+    <div style={{ marginBottom: 20, fontSize: 11, color: 'var(--text-faint)' }}>
       {profiles && (
         <>
           {t('profilesOn', { name })}{' '}
@@ -186,8 +182,7 @@ export default function App() {
   useEffect(() => {
     const load = file => fetch(`${import.meta.env.BASE_URL}${file}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
-    const loadOptional = (file, fallback) => load(file).catch(() => fallback);
-    Promise.all([load('events.json'), loadOptional('name-merges.json', []), loadOptional('athlete-links.json', {})])
+    Promise.all([load('events.json'), load('name-merges.json'), load('athlete-links.json')])
       .then(([events, merges, athleteLinks]) => { setMergeGroups(merges); setLinks(athleteLinks); setData(events); })
       .catch(e => setLoadErr(e.message));
   }, []);
@@ -239,8 +234,8 @@ export default function App() {
     });
   }, [searchQuery]);
 
-  const searchedAthletes = useMemo(
-    () => searchQuery ? athletes.filter(a => a.name === searchQuery) : [],
+  const searchedAthlete = useMemo(
+    () => athletes.find(a => a.name === searchQuery),
     [athletes, searchQuery],
   );
 
@@ -249,7 +244,7 @@ export default function App() {
     [allResults, searchQuery],
   );
 
-  const notedAthletes = searchedAthletes.filter(a => a.aliases.length > 0 || profileMap.has(a.name));
+  const profiles = profileMap.get(searchQuery);
 
   const bestTopsResult = results.length ? results.reduce((best, r) => {
     const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks;
@@ -452,12 +447,8 @@ export default function App() {
         </div>
       )}
 
-      {notedAthletes.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20, fontSize: 11, color: 'var(--text-faint)' }}>
-          {notedAthletes.map(a => (
-            <AthleteNote key={a.name} name={a.name} aliases={a.aliases} profiles={profileMap.get(a.name)} />
-          ))}
-        </div>
+      {searchedAthlete && (profiles || searchedAthlete.aliases.length > 0) && (
+        <AthleteNote name={searchedAthlete.name} aliases={searchedAthlete.aliases} profiles={profiles} />
       )}
 
       {/* Summary stats */}

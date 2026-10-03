@@ -17,6 +17,7 @@ EVENTS_PATH = _ROOT / "public" / "events.json"
 MERGES_PATH = _ROOT / "public" / "name-merges.json"
 DISTINCT_PATH = _ROOT / "public" / "name-distinct.json"
 
+# Minimum difflib ratio for two differently spelled names to be suggested
 SIMILARITY_THRESHOLD = 0.93
 
 SAME_WORDS = "same words"
@@ -31,15 +32,22 @@ def name_key(name: str) -> str:
     return re.sub(r"\s+", " ", n).strip()
 
 
-def load_groups(path: Path) -> list[list[str]]:
+def load_json(path: Path, default: list | dict) -> list | dict:
     if not path.exists():
-        return []
+        return default
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def save_json(path: Path, data: list | dict) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_groups(path: Path) -> list[list[str]]:
+    return load_json(path, [])
+
+
 def save_groups(path: Path, groups: list[list[str]]) -> None:
-    groups = sorted(groups, key=lambda g: g[0].casefold())
-    path.write_text(json.dumps(groups, ensure_ascii=False, indent=2), encoding="utf-8")
+    save_json(path, sorted(groups, key=lambda g: g[0].casefold()))
 
 
 def load_merge_map(path: Path = MERGES_PATH) -> dict[str, str]:
@@ -66,16 +74,20 @@ def _canonical_results(events: list[dict], merge_map: dict[str, str]) -> Iterato
                 yield athlete_name(athlete, merge_map), category["name"], athlete.get("fullName")
 
 
-def match_key(name: str) -> str:
+def name_words(name: str) -> list[str]:
     if " " not in name.strip():
         name = re.sub(r"(?<=[a-zß-ÿ])(?=[A-ZÀ-Þ])", " ", name)
-    return " ".join(sorted(name_key(name).split()))
+    return name_key(name).split()
+
+
+def match_key(name: str) -> str:
+    return " ".join(sorted(name_words(name)))
 
 
 def completes(full_name: str, name: str) -> bool:
-    words = match_key(name).split()
-    full_words = match_key(full_name).split()
-    single_word = len(name.replace(",", " ").split()) == 1
+    words = name_words(name)
+    full_words = name_words(full_name)
+    single_word = len(name.replace(",", " ").split()) <= 1
     abbreviated = any(word not in full_words for word in words)
     return (
         len(full_words) > 1
@@ -96,6 +108,7 @@ def _similar_keys(keys: list[str]) -> list[tuple[str, str, float]]:
             by_word[word].add(key)
     single_words = {key for key in keys if " " not in key}
 
+    # Only keys sharing a word are compared (a typo rarely hits every word of a name), except single-word keys
     pairs = []
     for key in keys:
         if " " in key:
@@ -104,7 +117,7 @@ def _similar_keys(keys: list[str]) -> list[tuple[str, str, float]]:
             others = set(keys)
         matcher = SequenceMatcher(None, b=key, autojunk=False)
         for other in others:
-            if other <= key:
+            if other <= key:  # each pair once, and never a key with itself
                 continue
             matcher.set_seq1(other)
             if (
@@ -235,14 +248,22 @@ def _parse_answer(answer: str, count: int) -> list[list[int]] | None:
     return partition
 
 
+def read_answer(prompt: str) -> str:
+    try:
+        return input(prompt).strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return "q"
+
+
+def summarize_categories(categories: list[str]) -> str:
+    return ", ".join(categories[:2]) + (", …" if len(categories) > 2 else "")
+
+
 def _ask(count: int) -> list[list[int]] | str:
     split_hint = "/1+2 3" if count > 2 else ""
     while True:
-        try:
-            answer = input(f"  [y/1-{count}/n{split_hint}/s/q, default s] ").strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return "q"
+        answer = read_answer(f"  [y/1-{count}/n{split_hint}/s/q, default s] ")
         if answer in ("", "s", "q"):
             return answer or "s"
         if (partition := _parse_answer(answer, count)) is not None:
@@ -267,9 +288,8 @@ def review(candidates: list[dict], merges_path: Path, distinct_path: Path) -> No
         print(f"\n[{i}/{len(candidates)}] Same athlete? ({describe_reasons(candidate['reasons'])})")
         details = zip(names, candidate["counts"], candidate["categories"], candidate["full_names"])
         for n, (name, count, cats, small_names) in enumerate(details, start=1):
-            shown = ", ".join(cats[:2]) + (", …" if len(cats) > 2 else "")
             small = f" · small name: {', '.join(small_names)}" if small_names else ""
-            print(f"  {n}) {name}  — {count}× · {shown}{small}")
+            print(f"  {n}) {name}  — {count}× · {summarize_categories(cats)}{small}")
 
         decision = _ask(len(names))
         if decision == "q":
