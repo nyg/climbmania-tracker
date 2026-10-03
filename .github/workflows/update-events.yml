@@ -1,0 +1,35 @@
+name: Update events
+
+on:
+  schedule:
+    - cron: '7 18,21 * * *'
+      timezone: 'Europe/Zurich'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Scrape even if no event has new results
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-events
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - run: ./scraper/scrape.sh ${{ !inputs.force && '--if-new-results' || '' }}
+
+      - run: |
+          git diff --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898799+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: update events' public/events.json
+          git push
