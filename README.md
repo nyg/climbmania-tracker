@@ -23,26 +23,3 @@ pnpm dev
 
 # 3. Open the URL printed by the dev server, enter an athlete name and hit the Enter key
 ```
-
-## Project structure
-
-```
-climbmania-tracker/
-├── index.html
-├── vite.config.js          ← Vite config
-├── pnpm-workspace.yaml     ← pnpm allowed build scripts
-├── package.json
-├── public/
-│   ├── count.js            ← self-hosted GoatCounter script
-│   └── events.json         ← pre-scraped event data
-├── worker/                 ← Cloudflare Worker proxying analytics hits to GoatCounter
-└── src/
-    ├── main.jsx            ← React entry point
-    ├── index.css           ← global styles + CSS variables
-    ├── i18n.js             ← i18next setup with browser locale detection
-    ├── locales/            ← translation files (en, fr, de, it)
-    ├── App.jsx             ← search, state, layout
-    ├── EventCard.jsx       ← per-event result card
-    ├── scoring.js          ← points of each block
-    └── components.jsx      ← BlockGrid, ProgressBar, StatCard
-```
