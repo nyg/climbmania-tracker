@@ -62,8 +62,9 @@ There is **no live scraping** and **no Vite proxy** — the old CORS workaround 
 **React data flow:**
 1. `App.jsx` — fetches `events.json`, `name-merges.json` and `athlete-links.json` on mount, shows the load error if any of them fails, and maps each result to its athlete's canonical name. The autocomplete shows one line per athlete with their other names ("a.k.a."); a query matches any of those names, ignoring case and accents. Results are always for one athlete picked from the autocomplete: Search picks the only athlete whose canonical name equals the query, or the only match, and otherwise opens the autocomplete. Computes summary stats (best tops/zones rate, best rank, best points) from results, and shows one line above them, below the legend, with the athlete's profile links (sites in `PROFILE_SITES`) and their other names, each with a dashed underline.
 2. `EventCard.jsx` — renders a single event result card: event title, date, category, the listed name when it differs from the canonical name (the `listedAs_female` translation is used in women's categories), rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result.
-3. `components.jsx` — four pure display components: `BlockGrid` (coloured squares per block number), `ExternalLinkIcon`, `ProgressBar`, `StatCard`.
-4. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
+3. `components.jsx` — four display components: `BlockGrid` (coloured squares per block number, each with a tooltip giving the points of its top and zone, how many athletes got them and what the athlete earned on it), `ExternalLinkIcon`, `ProgressBar`, `StatCard`. The tooltip opens on mouse hover and, for touch, on tap (a tap on the same block or anywhere else closes it); it is kept within the width of the grid.
+4. `scoring.js` — block points, as pure functions. `App.jsx` calls `countValidations()` once per event and attaches the counts to each of its results (`blockCounts`).
+5. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
 
 **Analytics (GoatCounter via proxy):** EasyPrivacy blocks both `gc.zgo.at` and `goatcounter.com`, so neither is contacted from the browser. It also blocks every third-party `navigator.sendBeacon` request (`*$ping,third-party`), so hits are sent with `fetch` instead.
 1. `public/count.js` — vendored, unmodified copy of GoatCounter's `count.v4.js`, served same-origin. To update it, re-download `https://gc.zgo.at/count.v4.js`.
@@ -90,6 +91,8 @@ Key tokens:
 Fixed accent colours (same in both themes): indigo `#6366f1`, tops green `#16a34a` / `#22c55e`, zones amber `#d97706` / `#f59e0b`.
 
 **Block data is arrays of 1-based block numbers** (`tops: [1, 3, 5]`, `zones: [2]`). `BlockGrid` iterates from 1 to `total` and checks `tops.includes(n)` / `zones.includes(n)`. If the scraper's parsing changes, update `parse_blocks()` in `scraper/scrape.py`.
+
+**Block points are computed in the app, not scraped** (`scoring.js`). A top or a zone is worth 1000 points divided by the number of athletes of the whole event, all categories together, who got it. Since the first event with zones (September 2024) a top also counts as a zone, both for the count and for the points; older events score tops only. An athlete's points are the sum of their blocks, rounded down. Some events from 2016 to 2018 are a few points off this formula, so a card whose blocks do not add up to the athlete's points shows its values with `≈` (`isApproximate()`).
 
 **i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text. No inclusive writing (`inscrit·e`, `iscritto/a`): when a string depends on the athlete's gender, use an i18next context (`key_female`) picked from the category name (`Femmes` / `Homme`), with the masculine form as the base key.
 

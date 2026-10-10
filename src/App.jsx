@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLinkIcon, StatCard } from './components.jsx';
 import EventCard from './EventCard.jsx';
+import { countValidations } from './scoring.js';
 
 function useIsMobile(breakpoint = 600) {
   const mq = typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${breakpoint}px)`) : null;
@@ -50,6 +51,7 @@ function buildProfileMap(links, mergeMap) {
 function flattenResults(events, mergeMap) {
   const results = [];
   for (const event of events) {
+    const blockCounts = countValidations(event);
     for (const category of event.categories ?? []) {
       for (const athlete of category.athletes ?? []) {
         const listedAs = athlete.listedName ?? athlete.name;
@@ -66,6 +68,7 @@ function flattenResults(events, mergeMap) {
           zones: athlete.zones,
           totalBlocks: athlete.totalBlocks,
           totalAthletes: category.athletes.length,
+          blockCounts,
         });
       }
     }

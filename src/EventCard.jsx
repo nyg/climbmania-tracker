@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockGrid, ExternalLinkIcon, ProgressBar } from './components.jsx';
+import { isApproximate } from './scoring.js';
 
 const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it'];
 
@@ -24,7 +25,7 @@ function scorePct(tops, zones, totalBlocks) {
 export default function EventCard({ result, prevResult }) {
   const { t, i18n } = useTranslation();
   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en';
-  const { athleteName, listedAs, eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes } = result;
+  const { athleteName, listedAs, eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes, blockCounts } = result;
   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`;
   const topsCount  = tops.length;
   const zonesCount = zones.length;
@@ -108,7 +109,7 @@ export default function EventCard({ result, prevResult }) {
       </div>
 
       {/* Block grid */}
-      <BlockGrid tops={tops} zones={zones} total={totalBlocks} />
+      <BlockGrid tops={tops} zones={zones} total={totalBlocks} counts={blockCounts} approximate={isApproximate(result)} />
     </div>
   );
 }
