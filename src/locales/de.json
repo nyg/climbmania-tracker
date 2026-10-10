@@ -31,5 +31,9 @@
   "blockTop": "Block {{n}}: TOP ✓",
   "blockZone": "Block {{n}}: Zone",
   "blockEmpty": "Block {{n}}: —",
+  "top": "Top",
+  "zone": "Zone",
+  "climbers_one": "{{count}} Kletterer",
+  "climbers_other": "{{count}} Kletterer",
   "footerDisclaimer": "Dieses Projekt ist nicht mit Climbmania verbunden oder von Climbmania unterstützt."
 }

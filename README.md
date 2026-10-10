@@ -8,6 +8,7 @@ Climbmania events — event by event, with a block-level grid per result.
 - Event data is pre-scraped (`scraper/scrape.sh`) and bundled as `public/events.json`.
 - The app loads that JSON, lets you search for an athlete by name, and
   shows their rank, points, tops, and zones for every event they entered.
+- Hovering over a block, or tapping it, shows how many points its top and zone are worth.
 - The interface is translated into French, German, Italian and English, and picks the
   right language automatically from the browser locale.
 
@@ -21,26 +22,4 @@ pnpm install
 pnpm dev
 
 # 3. Open the URL printed by the dev server, enter an athlete name and hit the Enter key
-```
-
-## Project structure
-
-```
-climbmania-tracker/
-├── index.html
-├── vite.config.js          ← Vite config
-├── pnpm-workspace.yaml     ← pnpm allowed build scripts
-├── package.json
-├── public/
-│   ├── count.js            ← self-hosted GoatCounter script
-│   └── events.json         ← pre-scraped event data
-├── worker/                 ← Cloudflare Worker proxying analytics hits to GoatCounter
-└── src/
-    ├── main.jsx            ← React entry point
-    ├── index.css           ← global styles + CSS variables
-    ├── i18n.js             ← i18next setup with browser locale detection
-    ├── locales/            ← translation files (en, fr, de, it)
-    ├── App.jsx             ← search, state, layout
-    ├── EventCard.jsx       ← per-event result card
-    └── components.jsx      ← BlockGrid, ProgressBar, StatCard
 ```
