@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/climbmania-tracker/',
-  plugins: [react()],
-  server: {
-    port: 0,
-  },
+   base: '/climbmania-tracker/',
+   plugins: [react()],
+   server: {
+      port: 0,
+   },
 })
