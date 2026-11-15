@@ -1,0 +1,46 @@
+name: Update GoatCounter script
+
+on:
+  schedule:
+    - cron: '23 6 1 * *'
+      timezone: 'Europe/Zurich'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-goatcounter
+
+env:
+  SCRIPT: public/count.js
+  BRANCH: chore/update-goatcounter-script
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download the newest numbered version
+        run: |
+          version=1
+          while curl --fail --silent --output /dev/null "https://gc.zgo.at/count.v$((version + 1)).js"; do
+            version=$((version + 1))
+          done
+          curl --fail --silent --show-error --output "$SCRIPT" "https://gc.zgo.at/count.v$version.js"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Open a pull request when the script changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898799+github-actions[bot]@users.noreply.github.com'
+          title="chore: update the GoatCounter script to count.v$VERSION.js"
+          git switch --force-create "$BRANCH"
+          git commit -m "$title" "$SCRIPT"
+          git push --force origin "$BRANCH"
+          gh pr view "$BRANCH" --json state --jq .state | grep -q OPEN || gh pr create --title "$title" --body "Copy of https://gc.zgo.at/count.v$VERSION.js."
