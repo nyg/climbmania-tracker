@@ -1,4 +1,3 @@
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BlockGrid, ExternalLinkIcon, ProgressBar } from './components.jsx'
@@ -50,7 +49,7 @@ export default function EventCard({ result, prevResult }) {
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
             <div>
                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  {eventTitle.replace(/Climbmania\s*[:\-]?\s*/i, '')}
+                  {eventTitle.replace(/Climbmania\s*[:-]?\s*/i, '')}
                   <a href={eventUrl} target="_blank" rel="noopener noreferrer"
                      style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
                      title="Open event results">

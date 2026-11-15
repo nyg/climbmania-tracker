@@ -201,10 +201,6 @@ export default function App() {
 
    const suggestions = useMemo(() => matchAthletes(athletes, name), [name, athletes])
 
-   useEffect(() => {
-      setFocusedIndex(-1)
-   }, [suggestions])
-
    const handleSearch = () => {
       const query = name.trim()
       const exactMatches = suggestions.filter(s => foldName(s.name) === foldName(query))
@@ -294,7 +290,7 @@ export default function App() {
                         type="text"
                         value={name}
                         onChange={e => {
-                           setName(e.target.value); setShowDropdown(true)
+                           setName(e.target.value); setShowDropdown(true); setFocusedIndex(-1)
                         }}
                         onFocus={() => name.trim() && setShowDropdown(true)}
                         onBlur={() => setTimeout(() => {
