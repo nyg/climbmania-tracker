@@ -548,6 +548,7 @@ export default function App() {
                   key={`${r.eventId}-${r.category}-${r.listedAs}`}
                   result={r}
                   prevResult={idx < results.length - 1 ? results[idx + 1] : null}
+                  isMobile={isMobile}
                />
             ))}
          </div>
