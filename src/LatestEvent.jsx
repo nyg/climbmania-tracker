@@ -13,8 +13,8 @@ function ageGroupOrder({ name }) {
    if (name.startsWith('OPEN')) {
       return 0
    }
-   const age = name.match(/^M(\d+)\b/)
-   return age !== null && Number(age[1]) < ADULT_AGE ? 2 : 1
+   const age = Number(name.match(/^M(\d+)\b/)?.[1])
+   return age < ADULT_AGE ? 1 + ADULT_AGE - age : 1
 }
 
 function adultsFirst(categories) {
