@@ -92,6 +92,8 @@ Fixed accent colours (same in both themes): indigo `#6366f1`, tops green `#16a34
 
 **Block data is arrays of 1-based block numbers** (`tops: [1, 3, 5]`, `zones: [2]`). `BlockGrid` iterates from 1 to `total` and checks `tops.includes(n)` / `zones.includes(n)`. If the scraper's parsing changes, update `parse_blocks()` in `scraper/scrape.py`.
 
+**Event dates are ISO days** (`date: "2026-05-09"`). The scraper converts the date printed on the group page (`Saturday 9 May 2026`) and exits with an error when it cannot read one; result links without a date (the Superfinale links) are skipped. The app sorts results on that string and formats it with `toLocaleDateString` in UTC.
+
 **Block points are computed in the app, not scraped** (`scoring.js`). A top or a zone is worth 1000 points divided by the number of athletes of the whole event, all categories together, who got it. Since the first event with zones (September 2024) a top also counts as a zone, both for the count and for the points; older events score tops only. An athlete's points are the sum of their blocks, rounded down. Some events from 2016 to 2018 are a few points off this formula, so a card whose blocks do not add up to the athlete's points shows its values with `≈` (`isApproximate()`).
 
 **i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text. No inclusive writing (`inscrit·e`, `iscritto/a`): when a string depends on the athlete's gender, use an i18next context (`key_female`) picked from the category name (`Femmes` / `Homme`), with the masculine form as the base key.

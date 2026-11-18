@@ -67,7 +67,7 @@ def discover_events(soup: BeautifulSoup) -> list[dict]:
         # Walk up to the ibox-content container to find title and date
         container = anchor.find_parent(class_="ibox-content")
         title = ""
-        date = ""
+        date_text = ""
         if container:
             h1 = container.find("h1")
             if h1:
@@ -78,9 +78,18 @@ def discover_events(soup: BeautifulSoup) -> list[dict]:
                 # Extract bold date text, e.g. "Saturday 9 May 2026"
                 bolds = h3.find_all("b")
                 if bolds:
-                    date = bolds[0].get_text(strip=True)
+                    date_text = bolds[0].get_text(strip=True)
 
-        events.append({"id": event_id, "title": title, "date": date, "url": url})
+        if not date_text:
+            print(f"  ↷ Skipping event {event_id} without a date")
+            continue
+
+        try:
+            iso_date = datetime.strptime(date_text, "%A %d %B %Y").date().isoformat()
+        except ValueError:
+            sys.exit(f"Cannot read the date of event {event_id}: {date_text!r}.")
+
+        events.append({"id": event_id, "title": title, "date": iso_date, "url": url})
 
     # Deduplicate by ID while preserving order
     seen = set()
@@ -207,17 +216,8 @@ def parse_results_page(soup: BeautifulSoup) -> list[dict]:
     return categories
 
 
-def _parse_event_date(date_str: str) -> datetime | None:
-    """Parse an event date string like 'Saturday 9 May 2026'. Returns None on failure."""
-    try:
-        return datetime.strptime(date_str.strip(), "%A %d %B %Y")
-    except ValueError:
-        return None
-
-
-def _event_time(date_str: str, hour: int) -> datetime | None:
-    parsed = _parse_event_date(date_str)
-    return parsed.replace(hour=hour, tzinfo=SWISS_TZ) if parsed else None
+def _event_time(iso_date: str, hour: int) -> datetime:
+    return datetime.fromisoformat(iso_date).replace(hour=hour, tzinfo=SWISS_TZ)
 
 
 def _has_new_results(events: list[dict], output: str, now: datetime) -> bool:
@@ -225,7 +225,7 @@ def _has_new_results(events: list[dict], output: str, now: datetime) -> bool:
     moments = [
         _event_time(ev["date"], hour) for ev in events for hour in (QUALIFICATION_END_HOUR, FINALS_END_HOUR)
     ]
-    return any(moment is not None and last < moment <= now for moment in moments)
+    return any(last < moment <= now for moment in moments)
 
 
 def scrape(output: str, delay: float, since: date | None, if_new_results: bool) -> None:
@@ -246,8 +246,7 @@ def scrape(output: str, delay: float, since: date | None, if_new_results: bool) 
 
     events_meta = []
     for ev in all_events:
-        qualification_end = _event_time(ev["date"], QUALIFICATION_END_HOUR)
-        if qualification_end is not None and qualification_end > now:
+        if _event_time(ev["date"], QUALIFICATION_END_HOUR) > now:
             print(f"  ↷ Skipping event {ev['id']} without results yet — {ev['title']} ({ev['date']})")
         else:
             events_meta.append(ev)
@@ -264,8 +263,7 @@ def scrape(output: str, delay: float, since: date | None, if_new_results: bool) 
     for i, meta in enumerate(events_meta, start=1):
         print(f"[{i}/{total}] Event {meta['id']} — {meta['title']}")
 
-        parsed = _parse_event_date(meta["date"])
-        if since and parsed is not None and parsed.date() < since:
+        if since and date.fromisoformat(meta["date"]) < since:
             if meta["id"] in previous:
                 events_out.append(previous[meta["id"]])
                 print(f"  Kept from {output} (before {since}).")

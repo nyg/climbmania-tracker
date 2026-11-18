@@ -5,15 +5,9 @@ import { isApproximate } from './scoring.js'
 
 const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it']
 
-const MONTHS = { January:0, February:1, March:2, April:3, May:4, June:5, July:6, August:7, September:8, October:9, November:10, December:11 }
-
-function parseEventDate(str, lang) {
-   const m = str && str.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/)
-   if (!m || MONTHS[m[2]] === undefined) {
-      return str
-   }
-   return new Date(+m[3], MONTHS[m[2]], +m[1])
-      .toLocaleDateString(lang || undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+function formatEventDate(isoDate, lang) {
+   return new Date(isoDate)
+      .toLocaleDateString(lang || undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
 function weightedScore(tops, zones) {
@@ -59,7 +53,7 @@ export default function EventCard({ result, prevResult }) {
                      <>
                         <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>
                         <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
-                           {parseEventDate(eventDate, i18n.language)}
+                           {formatEventDate(eventDate, i18n.language)}
                         </span>
                      </>
                   )}
