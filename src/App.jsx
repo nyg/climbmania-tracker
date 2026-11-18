@@ -35,6 +35,25 @@ function foldName(name) {
    return name.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '')
 }
 
+function athleteInUrl() {
+   const fragment = window.location.hash.slice(1)
+   try {
+      return decodeURIComponent(fragment)
+   } catch {
+      return fragment
+   }
+}
+
+function countSearch(query) {
+   const count = () => window.goatcounter.count({ path: `/search/${query}`, title: query, event: true })
+   if (window.goatcounter?.count) {
+      count()
+   } else {
+      // count.js is loaded async and may not have run yet.
+      document.querySelector('script[data-goatcounter]')?.addEventListener('load', count, { once: true })
+   }
+}
+
 function buildMergeMap(groups) {
    const mergeMap = new Map()
    for (const [canonical, ...aliases] of groups) {
@@ -157,8 +176,8 @@ export default function App() {
    const [mergeGroups, setMergeGroups] = useState([])
    const [links, setLinks]             = useState({})
    const [loadErr, setLoadErr]         = useState(null)
-   const [name, setName]               = useState('')
-   const [searchQuery, setSearchQuery] = useState('')
+   const [name, setName]               = useState(athleteInUrl)
+   const [searchQuery, setSearchQuery] = useState(athleteInUrl)
    const [showDropdown, setShowDropdown] = useState(false)
    const [hoveredSuggestion, setHoveredSuggestion] = useState(null)
    const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -170,6 +189,16 @@ export default function App() {
    }, [theme])
 
    const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+
+   useEffect(() => {
+      const showAthleteInUrl = () => {
+         const athlete = athleteInUrl()
+         setName(athlete)
+         setSearchQuery(athlete)
+      }
+      window.addEventListener('hashchange', showAthleteInUrl)
+      return () => window.removeEventListener('hashchange', showAthleteInUrl)
+   }, [])
 
    useEffect(() => {
       const load = file => fetch(`${import.meta.env.BASE_URL}${file}`)
@@ -201,10 +230,18 @@ export default function App() {
       [name, athletes, profileMap],
    )
 
+   const showResultsFor = (query) => {
+      setSearchQuery(query)
+      if (query !== athleteInUrl()) {
+         const url = query ? `#${encodeURIComponent(query)}` : window.location.pathname + window.location.search
+         window.history.pushState(null, '', url)
+      }
+   }
+
    const handleSearch = () => {
       const query = name.trim()
       if (!query) {
-         setSearchQuery('')
+         showResultsFor('')
          inputRef.current?.focus()
          setShowDropdown(true)
          return
@@ -217,41 +254,38 @@ export default function App() {
          inputRef.current?.focus()
          setShowDropdown(true)
       } else {
-         setSearchQuery(query)
+         showResultsFor(query)
          setShowDropdown(false)
       }
    }
 
    const handleSelect = (athleteName) => {
       setName(athleteName)
-      setSearchQuery(athleteName)
+      showResultsFor(athleteName)
       setShowDropdown(false)
       setHoveredSuggestion(null)
       setFocusedIndex(-1)
    }
 
    useEffect(() => {
-      if (!searchQuery) {
-         return
+      if (searchQuery) {
+         countSearch(searchQuery)
       }
-      window.goatcounter?.count({
-         path: `/search/${searchQuery}`,
-         title: searchQuery,
-         event: true,
-      })
    }, [searchQuery])
 
+   const shownName = mergeMap.get(searchQuery) ?? searchQuery
+
    const searchedAthlete = useMemo(
-      () => athletes.find(a => a.name === searchQuery),
-      [athletes, searchQuery],
+      () => athletes.find(a => a.name === shownName),
+      [athletes, shownName],
    )
 
    const results = useMemo(
-      () => searchQuery ? allResults.filter(r => r.athleteName === searchQuery) : [],
-      [allResults, searchQuery],
+      () => shownName ? allResults.filter(r => r.athleteName === shownName) : [],
+      [allResults, shownName],
    )
 
-   const profiles = profileMap.get(searchQuery)
+   const profiles = profileMap.get(shownName)
 
    const bestTopsResult = results.length ? results.reduce((best, r) => {
       const rate  = (r.tops.length + r.zones.length * 0.5) / r.totalBlocks
