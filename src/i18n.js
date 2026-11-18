@@ -7,6 +7,10 @@ import en from './locales/en.json'
 import fr from './locales/fr.json'
 import it from './locales/it.json'
 
+i18n.on('languageChanged', () => {
+   document.documentElement.lang = i18n.resolvedLanguage
+})
+
 i18n
    .use(LanguageDetector)
    .use(initReactI18next)

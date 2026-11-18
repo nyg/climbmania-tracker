@@ -7,6 +7,7 @@ pnpm install     # install dependencies
 pnpm dev         # start dev server on a random free port, printed on start
 pnpm build       # production build
 pnpm preview     # serve production build at http://localhost:4173
+pnpm lint        # ESLint, rules and formatting from github:nyg/eslint-config
 
 # Python scraper (run separately to refresh data)
 ./scraper/scrape.sh                        # creates scraper/.venv, installs deps, writes public/events.json
@@ -30,7 +31,7 @@ pnpm --dir worker run tail                 # stream production logs
 pnpm --dir worker exec wrangler secret put GOATCOUNTER_TOKEN
 ```
 
-No test runner or linter is configured.
+No test runner is configured.
 
 ## Terminology
 
@@ -64,11 +65,11 @@ There is **no live scraping** and **no Vite proxy** — the old CORS workaround 
 2. `EventCard.jsx` — renders a single event result card: event title, date, category, the listed name when it differs from the canonical name (the `listedAs_female` translation is used in women's categories), rank, score, a progress bar, block grid, and a diff badge comparing weighted score % vs. the previous result. On a narrow screen (`isMobile`) the title, the date and the category are stacked on three lines, and the counts and the rank use smaller type; at any width the rank moves to its own line when it does not fit next to the counts.
 3. `components.jsx` — four display components: `BlockGrid` (coloured squares per block number, each with a tooltip giving the points of its top and zone, how many athletes got them and what the athlete earned on it), `ExternalLinkIcon`, `ProgressBar`, `StatCard`. The tooltip opens on mouse hover and, for touch, on tap (a tap on the same block or anywhere else closes it); it is kept within the width of the grid.
 4. `scoring.js` — block points, as pure functions. `App.jsx` calls `countValidations()` once per event and attaches the counts to each of its results (`blockCounts`).
-5. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`.
+5. `i18n.js` — initialises i18next with `LanguageDetector`; bundles translations for `en`, `fr`, `de`, `it` from `src/locales/`, and keeps the `lang` attribute of `<html>` on the language in use.
 
 **Analytics (GoatCounter via proxy):** EasyPrivacy blocks both `gc.zgo.at` and `goatcounter.com`, so neither is contacted from the browser. It also blocks every third-party `navigator.sendBeacon` request (`*$ping,third-party`), so hits are sent with `fetch` instead.
 1. `public/count.js` — vendored, unmodified copy of one of GoatCounter's numbered `count.vN.js` files, served same-origin. The `Update GoatCounter script` workflow opens a pull request with the newest one every month.
-2. `index.html` — an inline script, which must stay before the `count.js` tag, replaces `navigator.sendBeacon` with a `fetch` POST (`keepalive`, `no-cors`), which blockers see as `xmlhttprequest` rather than `ping`. The `data-goatcounter` attribute points `count.js` at the Worker's `/hit` endpoint. `App.jsx` sends search events through the same path via `window.goatcounter.count()`, with the raw query as the event path (`/search/<query>`). `count.js` is loaded `async`, so an event for an athlete that comes from the URL waits for its `load` event.
+2. `index.html` — an inline script, which must stay before the `count.js` tag, replaces `navigator.sendBeacon` with a `fetch` POST (`keepalive`, `no-cors`), which blockers see as `xmlhttprequest` rather than `ping`. The `count.js` tag uses `src="/count.js"`: Vite adds the base path to it in dev and in the build, whereas `%BASE_URL%count.js` gets the base twice in dev. The `data-goatcounter` attribute points `count.js` at the Worker's `/hit` endpoint. `App.jsx` sends search events through the same path via `window.goatcounter.count()`, with the raw query as the event path (`/search/<query>`). `count.js` is loaded `async`, so an event for an athlete that comes from the URL waits for its `load` event.
 3. `worker/src/index.js` — Cloudflare Worker. Accepts only `POST /hit` with `Origin` equal to `ALLOWED_ORIGIN`, maps `count.js` query params (`p`, `t`, `r`, `q`, `e`, `b`, `s`) to a hit, adds the visitor's real IP (`CF-Connecting-IP`), `User-Agent` and language, and forwards it to GoatCounter's `POST /api/v0/count` in the background. Replies 204 straight away.
 4. `worker/wrangler.jsonc` — Worker name and the `ALLOWED_ORIGIN` / `GOATCOUNTER_URL` vars. Workers Logs are enabled, so failed forwards logged by the Worker can be searched in the Cloudflare dashboard after the fact. The API token is the `GOATCOUNTER_TOKEN` secret, never committed; for local runs put it in `worker/.dev.vars`.
 
