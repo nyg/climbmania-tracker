@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef,useState } from 'react'
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ExternalLinkIcon, StatCard } from './components.jsx'
@@ -182,6 +182,20 @@ export default function App() {
    const [hoveredSuggestion, setHoveredSuggestion] = useState(null)
    const [focusedIndex, setFocusedIndex] = useState(-1)
    const inputRef = useRef(null)
+   const listRef = useRef(null)
+   const listId = useId()
+
+   useEffect(() => {
+      const list = listRef.current
+      if (!list) {
+         return
+      }
+      if (focusedIndex < 0) {
+         list.scrollTop = 0
+      } else {
+         list.children[focusedIndex]?.scrollIntoView({ block: 'nearest' })
+      }
+   }, [focusedIndex])
 
    useEffect(() => {
       document.documentElement.dataset.theme = theme
@@ -237,6 +251,8 @@ export default function App() {
          window.history.pushState(null, '', url)
       }
    }
+
+   const listOpen = showDropdown && suggestions.length > 0
 
    const handleSearch = () => {
       const query = name.trim()
@@ -328,7 +344,12 @@ export default function App() {
                         ref={inputRef}
                         className="name-input"
                         type="text"
+                        role="combobox"
                         aria-label={t('inputLabel')}
+                        aria-autocomplete="list"
+                        aria-expanded={listOpen}
+                        aria-controls={listOpen ? listId : undefined}
+                        aria-activedescendant={listOpen && focusedIndex >= 0 ? `${listId}-${focusedIndex}` : undefined}
                         autoCorrect="off"
                         spellCheck={false}
                         value={name}
@@ -368,8 +389,8 @@ export default function App() {
                            outline: 'none', padding: '2px 0', fontFamily: 'inherit', width: '100%',
                         }}
                      />
-                     {showDropdown && suggestions.length > 0 && (
-                        <div style={{
+                     {listOpen && (
+                        <div ref={listRef} id={listId} role="listbox" aria-label={t('inputLabel')} style={{
                            position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 200,
                            background: 'var(--bg-dropdown)', border: '1px solid var(--border-dark)', borderRadius: 8,
                            maxHeight: 220, overflowY: 'auto',
@@ -378,6 +399,9 @@ export default function App() {
                            {suggestions.map((s, idx) => (
                               <div
                                  key={s.name}
+                                 id={`${listId}-${idx}`}
+                                 role="option"
+                                 aria-selected={focusedIndex === idx}
                                  onMouseDown={() => handleSelect(s.name)}
                                  onMouseEnter={() => setHoveredSuggestion(s.name)}
                                  onMouseLeave={() => setHoveredSuggestion(null)}
