@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ExternalLinkIcon, StatCard } from './components.jsx'
@@ -6,17 +6,13 @@ import EventCard from './EventCard.jsx'
 import { countValidations } from './scoring.js'
 
 function useIsMobile(breakpoint = 600) {
-   const mq = typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${breakpoint}px)`) : null
-   const [isMobile, setIsMobile] = useState(mq ? mq.matches : false)
-   useEffect(() => {
-      if (!mq) {
-         return
-      }
-      const handler = (e) => setIsMobile(e.matches)
-      mq.addEventListener('change', handler)
-      return () => mq.removeEventListener('change', handler)
-   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-   return isMobile
+   const query = `(max-width: ${breakpoint}px)`
+   const subscribe = useCallback((onChange) => {
+      const mediaQuery = window.matchMedia(query)
+      mediaQuery.addEventListener('change', onChange)
+      return () => mediaQuery.removeEventListener('change', onChange)
+   }, [query])
+   return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches)
 }
 
 const PROFILE_SITES = {

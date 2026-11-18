@@ -52,7 +52,7 @@ export default function EventCard({ result, prevResult, isMobile = false }) {
                         {'\u00A0'}
                         <a href={eventUrl} target="_blank" rel="noopener noreferrer"
                            style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
-                           title="Open event results">
+                           title={t('openEventResults')}>
                            <ExternalLinkIcon />
                         </a>
                      </span>
@@ -83,7 +83,7 @@ export default function EventCard({ result, prevResult, isMobile = false }) {
                   <span style={{ fontSize: isMobile ? 13 : 14, fontWeight: 500, color: 'var(--text-faint)', margin: '0 2px' }}> + </span>
                   <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: '#f59e0b' }}>{zonesCount}Z</span>
                </span>
-               <span style={{ fontSize: isMobile ? 12 : 13, color: 'var(--text-muted)' }}>· {points} pts</span>
+               <span style={{ fontSize: isMobile ? 12 : 13, color: 'var(--text-muted)' }}>· {t('pts', { points })}</span>
             </div>
             <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 800, color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginInlineStart: 'auto' }}>
                {t('rank', { rank })}

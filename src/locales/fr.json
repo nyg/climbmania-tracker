@@ -28,6 +28,7 @@
   "ptsLabel": "pts / {{total}}",
   "zonesOnly": "zones seules",
   "diffSame": "→ identique",
+  "openEventResults": "Ouvrir les résultats de l'événement",
   "topsProgressLabel": "TOPS + ZONES",
   "blockTop": "Bloc {{n}} : TOP ✓",
   "blockZone": "Bloc {{n}} : ZONE seule",
