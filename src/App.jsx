@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ExternalLinkIcon, StatCard } from './components.jsx'
 import EventCard from './EventCard.jsx'
+import LatestEvent from './LatestEvent.jsx'
 import { countValidations } from './scoring.js'
 
 function useIsMobile(breakpoint = 600) {
@@ -48,6 +49,10 @@ function countSearch(query) {
       // count.js is loaded async and may not have run yet.
       document.querySelector('script[data-goatcounter]')?.addEventListener('load', count, { once: true })
    }
+}
+
+function firstYearOf(events) {
+   return events.map(event => event.date).sort()[0]?.slice(0, 4)
 }
 
 function buildMergeMap(groups) {
@@ -476,6 +481,15 @@ export default function App() {
                </div>
             )}
          </div>
+
+         {data && !searchQuery && (
+            <>
+               <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: 20 }}>
+                  {t('intro', { year: firstYearOf(data.events ?? []) })}
+               </p>
+               <LatestEvent events={data.events ?? []} mergeMap={mergeMap} isMobile={isMobile} />
+            </>
+         )}
 
          {/* Legend */}
          {results.length > 0 && (

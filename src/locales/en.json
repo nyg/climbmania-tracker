@@ -6,6 +6,8 @@
   "inputPlaceholder": "Enter participant name…",
   "searchButton": "Search",
   "eventsLoaded": "{{count}} events loaded · last scraped {{date}}",
+  "intro": "Search a Climbmania participant to see their tops and zones at every event since {{year}}.",
+  "latestEvent": "Latest event",
   "legendTop": "Top — block fully completed",
   "legendZone": "Zone only",
   "legendEmpty": "Not completed",

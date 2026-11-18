@@ -6,6 +6,8 @@
   "inputPlaceholder": "Nome del partecipante…",
   "searchButton": "Cerca",
   "eventsLoaded": "{{count}} eventi caricati · ultimo aggiornamento {{date}}",
+  "intro": "Cerca un partecipante Climbmania per vedere i suoi top e le sue zone a ogni evento dal {{year}}.",
+  "latestEvent": "Ultimo evento",
   "legendTop": "Top — blocco completato",
   "legendZone": "Zone",
   "legendEmpty": "Non completato",
