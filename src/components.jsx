@@ -161,6 +161,42 @@ export function BlockGrid({ tops = [], zones = [], total = 30, counts, approxima
    )
 }
 
+const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it']
+
+function formatEventDate(isoDate, lang) {
+   return new Date(isoDate)
+      .toLocaleDateString(lang || undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
+export function EventHeading({ eventId, title, date, isMobile = false }) {
+   const { t, i18n } = useTranslation()
+   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en'
+   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`
+   return (
+      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '2px 8px' }}>
+         <span>
+            {title.replace(/Climbmania\s*[:-]?\s*/i, '')}
+            <span style={{ whiteSpace: 'nowrap' }}>
+               {'\u00A0'}
+               <a href={eventUrl} target="_blank" rel="noopener noreferrer"
+                  style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
+                  title={t('openEventResults')}>
+                  <ExternalLinkIcon />
+               </a>
+            </span>
+         </span>
+         {date && (
+            <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexBasis: isMobile ? '100%' : 'auto' }}>
+               {!isMobile && <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>}
+               <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
+                  {formatEventDate(date, i18n.language)}
+               </span>
+            </span>
+         )}
+      </div>
+   )
+}
+
 export function ExternalLinkIcon() {
    return (
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none"

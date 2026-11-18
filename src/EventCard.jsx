@@ -1,14 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
-import { BlockGrid, ExternalLinkIcon, ProgressBar } from './components.jsx'
+import { BlockGrid, EventHeading, ProgressBar } from './components.jsx'
 import { isApproximate } from './scoring.js'
-
-const SUPPORTED_LANGS = ['en', 'fr', 'de', 'it']
-
-function formatEventDate(isoDate, lang) {
-   return new Date(isoDate)
-      .toLocaleDateString(lang || undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
-}
 
 function weightedScore(tops, zones) {
    return tops.length + zones.length * 0.5
@@ -19,10 +12,8 @@ function scorePct(tops, zones, totalBlocks) {
 }
 
 export default function EventCard({ result, prevResult, isMobile = false }) {
-   const { t, i18n } = useTranslation()
-   const lang = SUPPORTED_LANGS.includes(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'en'
+   const { t } = useTranslation()
    const { athleteName, listedAs, eventId, eventTitle, eventDate, category, rank, points, tops = [], zones = [], totalBlocks, totalAthletes, blockCounts } = result
-   const eventUrl = `https://www.climbmania.ch/${lang}/groups/1/events/${eventId}/results`
    const topsCount  = tops.length
    const zonesCount = zones.length
    const score      = weightedScore(tops, zones)
@@ -45,27 +36,7 @@ export default function EventCard({ result, prevResult, isMobile = false }) {
             alignItems: isMobile ? 'flex-start' : 'baseline', gap: isMobile ? 4 : 12, marginBottom: 10,
          }}>
             <div>
-               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '2px 8px' }}>
-                  <span>
-                     {eventTitle.replace(/Climbmania\s*[:-]?\s*/i, '')}
-                     <span style={{ whiteSpace: 'nowrap' }}>
-                        {'\u00A0'}
-                        <a href={eventUrl} target="_blank" rel="noopener noreferrer"
-                           style={{ color: 'var(--text-ultra-faint)', display: 'inline-flex', lineHeight: 1 }}
-                           title={t('openEventResults')}>
-                           <ExternalLinkIcon />
-                        </a>
-                     </span>
-                  </span>
-                  {eventDate && (
-                     <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexBasis: isMobile ? '100%' : 'auto' }}>
-                        {!isMobile && <span style={{ fontSize: 10, color: 'var(--text-ultra-faint)' }}>·</span>}
-                        <span style={{ fontSize: 10, color: '#6366f1', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 500 }}>
-                           {formatEventDate(eventDate, i18n.language)}
-                        </span>
-                     </span>
-                  )}
-               </div>
+               <EventHeading eventId={eventId} title={eventTitle} date={eventDate} isMobile={isMobile} />
             </div>
             <div style={{ textAlign: isMobile ? 'left' : 'right', flexShrink: 0 }}>
                <div style={{ fontSize: 11, color: 'var(--text-ultra-faint)' }}>{category}</div>
