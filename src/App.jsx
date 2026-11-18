@@ -199,10 +199,19 @@ export default function App() {
 
    const athletes = useMemo(() => listAthletes(allResults), [allResults])
 
-   const suggestions = useMemo(() => matchAthletes(athletes, name), [name, athletes])
+   const suggestions = useMemo(
+      () => name.trim() ? matchAthletes(athletes, name) : athletes.filter(a => profileMap.has(a.name)),
+      [name, athletes, profileMap],
+   )
 
    const handleSearch = () => {
       const query = name.trim()
+      if (!query) {
+         setSearchQuery('')
+         inputRef.current?.focus()
+         setShowDropdown(true)
+         return
+      }
       const exactMatches = suggestions.filter(s => foldName(s.name) === foldName(query))
       const candidates = exactMatches.length ? exactMatches : suggestions
       if (candidates.length === 1) {
@@ -288,11 +297,14 @@ export default function App() {
                         ref={inputRef}
                         className="name-input"
                         type="text"
+                        aria-label={t('inputLabel')}
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={name}
                         onChange={e => {
                            setName(e.target.value); setShowDropdown(true); setFocusedIndex(-1)
                         }}
-                        onFocus={() => name.trim() && setShowDropdown(true)}
+                        onFocus={() => setShowDropdown(true)}
                         onBlur={() => setTimeout(() => {
                            if (document.activeElement !== inputRef.current) {
                               setShowDropdown(false)
