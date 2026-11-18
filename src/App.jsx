@@ -44,6 +44,16 @@ function athleteInUrl() {
    }
 }
 
+function countSearch(query) {
+   const count = () => window.goatcounter.count({ path: `/search/${query}`, title: query, event: true })
+   if (window.goatcounter?.count) {
+      count()
+   } else {
+      // count.js is loaded async and may not have run yet.
+      document.querySelector('script[data-goatcounter]')?.addEventListener('load', count, { once: true })
+   }
+}
+
 function buildMergeMap(groups) {
    const mergeMap = new Map()
    for (const [canonical, ...aliases] of groups) {
@@ -261,14 +271,9 @@ export default function App() {
    }
 
    useEffect(() => {
-      if (!searchQuery) {
-         return
+      if (searchQuery) {
+         countSearch(searchQuery)
       }
-      window.goatcounter?.count({
-         path: `/search/${searchQuery}`,
-         title: searchQuery,
-         event: true,
-      })
    }, [searchQuery])
 
    const shownName = mergeMap.get(searchQuery) ?? searchQuery
