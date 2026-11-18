@@ -239,6 +239,8 @@ def scrape(output: str, delay: float, since: date | None, if_new_results: bool) 
 
     now = datetime.now(timezone.utc)
     all_events = discover_events(group_soup)
+    if not all_events:
+        sys.exit("No event found on the group page.")
 
     if if_new_results and Path(output).exists() and not _has_new_results(all_events, output, now):
         print("No new results since the last scrape.")
@@ -256,7 +258,7 @@ def scrape(output: str, delay: float, since: date | None, if_new_results: bool) 
     print(f"Found {total} past events.\n")
 
     previous: dict[int, dict] = {}
-    if since and Path(output).exists():
+    if Path(output).exists():
         previous = {e["id"]: e for e in json.loads(Path(output).read_text(encoding="utf-8"))["events"]}
 
     events_out: list[dict] = []
@@ -275,11 +277,12 @@ def scrape(output: str, delay: float, since: date | None, if_new_results: bool) 
 
         results_soup = fetch(meta["url"], session)
         if not results_soup:
-            print(f"  Skipping event {meta['id']} (fetch failed).")
-            continue
+            sys.exit(f"Failed to fetch event {meta['id']}: {output} is left unchanged.")
 
         categories = parse_results_page(results_soup)
         if not categories:
+            if meta["id"] in previous:
+                sys.exit(f"Event {meta['id']} no longer has results on Climbmania: {output} is left unchanged.")
             print(f"  Skipping event {meta['id']} (no scored athletes).")
             continue
 
