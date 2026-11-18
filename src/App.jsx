@@ -83,10 +83,7 @@ function flattenResults(events, mergeMap) {
       }
    }
 
-   return results.sort((a, b) => {
-      const dateDiff = new Date(b.eventDate) - new Date(a.eventDate)
-      return dateDiff !== 0 ? dateDiff : b.eventId - a.eventId
-   })
+   return results.sort((a, b) => b.eventDate.localeCompare(a.eventDate) || b.eventId - a.eventId)
 }
 
 function listAthletes(results) {
@@ -485,7 +482,7 @@ export default function App() {
                      const s = bestTopsResult.tops.length + bestTopsResult.zones.length * 0.5
                      return `${s % 1 === 0 ? s : s.toFixed(1)} / ${bestTopsResult.totalBlocks}`
                   })()}
-                  subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${new Date(bestTopsResult.eventDate).getFullYear()}` : undefined}
+                  subtitle={bestTopsResult ? `${bestTopsResult.eventTitle} · ${bestTopsResult.eventDate.slice(0, 4)}` : undefined}
                   isMobile={isMobile}
                />
                <StatCard
@@ -498,13 +495,13 @@ export default function App() {
                         </span>
                      </>
                   ) : '—'}
-                  subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${new Date(bestRankResult.eventDate).getFullYear()}` : undefined}
+                  subtitle={bestRankResult ? `${bestRankResult.eventTitle} · ${bestRankResult.eventDate.slice(0, 4)}` : undefined}
                   isMobile={isMobile}
                />
                <StatCard
                   label={t('bestScore')}
                   value={bestPointsResult ? t('pts', { points: bestPointsResult.points }) : '—'}
-                  subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${new Date(bestPointsResult.eventDate).getFullYear()}` : undefined}
+                  subtitle={bestPointsResult ? `${bestPointsResult.eventTitle} · ${bestPointsResult.eventDate.slice(0, 4)}` : undefined}
                   isMobile={isMobile}
                />
             </div>
