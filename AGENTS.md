@@ -98,4 +98,6 @@ Fixed accent colours (same in both themes): indigo `#6366f1`, tops green `#16a34
 
 **i18n:** all user-visible strings go through `t('key')`. Add keys to all four locale files (`src/locales/{en,fr,de,it}.json`) when adding new UI text. No inclusive writing (`inscrit·e`, `iscritto/a`): when a string depends on the athlete's gender, use an i18next context (`key_female`) picked from the category name (`Femmes` / `Homme`), with the masculine form as the base key.
 
+**The athlete field is an ARIA combobox.** The input has `role="combobox"` and names the highlighted suggestion with `aria-activedescendant`; the suggestions are a `listbox` of `option`s, the highlighted one with `aria-selected`. The arrow keys move the highlight and scroll it into view. Change the keyboard handling in `App.jsx` and these attributes together.
+
 **`vite.config.js`** sets `base: '/climbmania-tracker/'` for GitHub Pages deployment. Use `import.meta.env.BASE_URL` when constructing asset paths (e.g. the `events.json` fetch).
