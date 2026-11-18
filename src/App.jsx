@@ -297,6 +297,9 @@ export default function App() {
                         ref={inputRef}
                         className="name-input"
                         type="text"
+                        aria-label={t('inputLabel')}
+                        autoCorrect="off"
+                        spellCheck={false}
                         value={name}
                         onChange={e => {
                            setName(e.target.value); setShowDropdown(true); setFocusedIndex(-1)

@@ -2,6 +2,7 @@
   "subtitle": "Climbmania · Block Progress Tracker",
   "switchToLight": "Passer en mode clair",
   "switchToDark": "Passer en mode sombre",
+  "inputLabel": "Nom du participant",
   "inputPlaceholder": "Nom du participant…",
   "searchButton": "Rechercher",
   "eventsLoaded": "{{count}} événements chargés · dernière mise à jour {{date}}",
