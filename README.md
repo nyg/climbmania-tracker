@@ -8,6 +8,7 @@ Climbmania events — event by event, with a block-level grid per result.
 - Event data is pre-scraped (`scraper/scrape.sh`) and bundled as `public/events.json`.
 - The app loads that JSON, lets you search for an athlete by name, and
   shows their rank, points, tops, and zones for every event they entered.
+- The athlete shown is part of the URL, so a page can be bookmarked or shared.
 - Hovering over a block, or tapping it, shows how many points its top and zone are worth.
 - The interface is translated into French, German, Italian and English, and picks the
   right language automatically from the browser locale.
